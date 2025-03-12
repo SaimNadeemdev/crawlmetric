@@ -1,67 +1,102 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Copy, Download } from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
+import { Copy, Download, Check } from "lucide-react"
+import { useState } from "react"
+import { motion } from "framer-motion"
+import { toast } from "sonner"
 
 interface ContentResultCardProps {
   title: string
   content: string
-  fileName?: string
-  onCopy?: () => void
+  downloadFileName?: string
   onDownload?: () => void
+  onCopy?: () => void
 }
 
 export function ContentResultCard({
   title,
   content,
-  fileName = "content.txt",
-  onCopy,
+  downloadFileName,
   onDownload,
+  onCopy,
 }: ContentResultCardProps) {
+  const [copied, setCopied] = useState(false);
+
   // Default copy handler if none provided
-  const handleCopy =
-    onCopy ||
-    (() => {
-      navigator.clipboard.writeText(content)
-    })
+  const handleCopy = () => {
+    if (onCopy) {
+      onCopy();
+    } else {
+      navigator.clipboard.writeText(content);
+    }
+    setCopied(true);
+    toast.success("Copied to clipboard!");
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   // Default download handler if none provided
-  const handleDownload =
-    onDownload ||
-    (() => {
-      const blob = new Blob([content], { type: "text/plain" })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = fileName
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-    })
+  const handleDownload = () => {
+    if (onDownload) {
+      onDownload();
+      return;
+    }
+
+    if (!downloadFileName) return;
+
+    const element = document.createElement("a");
+    const file = new Blob([content], { type: "text/plain" });
+    element.href = URL.createObjectURL(file);
+    element.download = downloadFileName;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+    toast.success(`Downloaded as ${downloadFileName}`);
+  };
 
   return (
-    <Card className="border border-green-200 dark:border-green-900 bg-green-50 dark:bg-green-950/20">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium">{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="bg-white dark:bg-gray-950 p-4 rounded-md border border-gray-200 dark:border-gray-800 max-h-[300px] overflow-y-auto whitespace-pre-wrap">
-          {content}
-        </div>
-        <div className="flex justify-end space-x-2">
-          <Button variant="outline" size="sm" onClick={handleCopy}>
-            <Copy className="h-4 w-4 mr-2" />
-            Copy
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, type: "spring", stiffness: 100 }}
+    >
+      <Card className="overflow-hidden border border-gray-200 rounded-[22px] bg-white/80 backdrop-blur-xl shadow-sm">
+        <div className="h-1.5 w-full bg-gradient-to-r from-blue-600 via-blue-500 to-blue-400"></div>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-xl font-semibold text-gray-800">{title}</CardTitle>
+          <CardDescription className="text-gray-600">
+            Your generated content is ready to use
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-gray-50 rounded-xl p-4 max-h-[400px] overflow-y-auto border border-gray-100 text-black whitespace-pre-wrap">
+            {content}
+          </div>
+        </CardContent>
+        <CardFooter className="flex justify-end gap-2 pt-2 pb-4">
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-full border-gray-200 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+            onClick={handleCopy}
+          >
+            {copied ? <Check className="h-4 w-4 mr-1" /> : <Copy className="h-4 w-4 mr-1" />}
+            {copied ? "Copied" : "Copy"}
           </Button>
-          <Button variant="outline" size="sm" onClick={handleDownload}>
-            <Download className="h-4 w-4 mr-2" />
-            Download
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+          {downloadFileName && (
+            <Button
+              variant="default"
+              size="sm"
+              className="rounded-full bg-blue-600 hover:bg-blue-700 text-white transition-colors"
+              onClick={handleDownload}
+            >
+              <Download className="h-4 w-4 mr-1" />
+              Download
+            </Button>
+          )}
+        </CardFooter>
+      </Card>
+    </motion.div>
   )
 }
-

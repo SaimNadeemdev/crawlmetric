@@ -32,14 +32,14 @@ export function HeroAnimated({ badge, title1, title2, description }: HeroAnimate
   }
 
   return (
-    <div className="relative overflow-hidden bg-black py-20 md:py-32">
+    <div className="relative overflow-hidden bg-white py-20 md:py-32">
       {/* Background grid pattern */}
-      <div className="absolute inset-0 z-0 opacity-20">
-        <div className="h-full w-full bg-[radial-gradient(#333_1px,transparent_1px)] [background-size:20px_20px]"></div>
+      <div className="absolute inset-0 z-0 opacity-10">
+        <div className="h-full w-full bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:20px_20px]"></div>
       </div>
 
       {/* Glow effect */}
-      <div className="absolute left-1/2 top-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-purple-500/20 blur-[100px]"></div>
+      <div className="absolute left-1/2 top-1/2 h-[300px] w-[300px] -translate-x-1/2 -translate-y-1/2 transform rounded-full bg-blue-300/20 blur-[100px]"></div>
 
       <div className="container relative z-10 mx-auto px-4">
         <div className="mx-auto max-w-4xl text-center">
@@ -114,4 +114,3 @@ export function HeroAnimated({ badge, title1, title2, description }: HeroAnimate
     </div>
   )
 }
-

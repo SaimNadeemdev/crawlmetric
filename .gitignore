@@ -25,3 +25,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Large files
+*.mp4
+*.zip
+/FS_Me/
+/Integral-CF/
+/auge-font-family-1741506185-0/
+/pacifico/
+/sofia_more/

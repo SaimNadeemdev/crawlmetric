@@ -5,8 +5,10 @@ import { KeywordResearchProvider } from "@/contexts/keyword-research-context"
 
 export default function KeywordResearchPage() {
   return (
-    <KeywordResearchProvider>
-      <KeywordResearch />
-    </KeywordResearchProvider>
+    <div className="min-h-screen bg-white">
+      <KeywordResearchProvider>
+        <KeywordResearch />
+      </KeywordResearchProvider>
+    </div>
   )
 }

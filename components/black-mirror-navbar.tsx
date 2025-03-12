@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ModeToggle } from "@/components/mode-toggle"
+import { IOSLogo } from "./ui/ios-logo"
 import { Settings, Menu, X, Home, ChevronRight, LogOut, User, Lock, Activity, Zap } from "lucide-react"
 
 // Define menu items
@@ -44,34 +45,11 @@ export function BlackMirrorNavbar() {
           isScrolled ? "bg-black/80 backdrop-blur-md border-b border-white/5" : "bg-black/70 backdrop-blur-sm"
         }`}
       >
-        <div className="container mx-auto px-4">
+        <div className="w-full px-4">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link href="/" className="flex items-center space-x-2 group">
-              <div className="relative">
-                <Zap className="h-6 w-6 text-blue-500" />
-                <motion.div
-                  className="absolute inset-0 bg-blue-500/20 rounded-full blur-md"
-                  animate={{
-                    scale: [1, 1.2, 1],
-                    opacity: [0.5, 0.8, 0.5],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Number.POSITIVE_INFINITY,
-                    repeatType: "reverse",
-                  }}
-                />
-              </div>
-              <div className="relative">
-                <span className="font-bold text-xl text-white tracking-tight">CrawlMetrics</span>
-                <motion.span
-                  className="absolute -bottom-1 left-0 h-[1px] bg-gradient-to-r from-blue-500/80 to-transparent"
-                  initial={{ width: 0 }}
-                  animate={{ width: "100%" }}
-                  transition={{ duration: 0.3, delay: 0.2 }}
-                />
-              </div>
+            <Link href="/">
+              <IOSLogo variant="black-mirror" />
             </Link>
 
             {/* Desktop Navigation */}
@@ -349,4 +327,3 @@ export function BlackMirrorNavbar() {
     </>
   )
 }
-

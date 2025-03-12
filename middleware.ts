@@ -60,10 +60,10 @@ export async function middleware(request: NextRequest) {
       sessionError: error ? error.message : null
     })
 
-    // IMPORTANT: If we're on a dashboard page, don't redirect to login
+    // IMPORTANT: If we're on any dashboard page, don't redirect to login
     // This prevents the redirect loop
-    if (path.startsWith("/dashboard/main")) {
-      console.log("On new dashboard page, skipping redirect checks")
+    if (path.startsWith("/dashboard/")) {
+      console.log("On dashboard page, skipping redirect checks")
       return NextResponse.next()
     }
 

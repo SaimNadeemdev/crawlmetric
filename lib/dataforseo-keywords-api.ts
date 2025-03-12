@@ -13,7 +13,7 @@ const ENDPOINTS = {
   BULK_KEYWORD_DIFFICULTY: "/dataforseo_labs/google/bulk_keyword_difficulty/live",
   KEYWORD_TRENDS: "/dataforseo_labs/google/keyword_search_volume/live", // Changed from keyword_trends
   SERP_COMPETITORS: "/dataforseo_labs/google/competitors_domain/live",
-  KEYWORD_IDEAS: "/dataforseo_labs/google/related_keywords/live",
+  KEYWORD_IDEAS: "/dataforseo_labs/google/keyword_ideas/live",
   SEARCH_INTENT: "/dataforseo_labs/google/search_intent/live",
 }
 
@@ -61,10 +61,8 @@ async function makeRequest(endpoint: string, data?: any) {
 
     console.log(`Response status: ${response.status}`)
 
-    // Don't log potentially sensitive data in production
-    if (process.env.NODE_ENV !== "production") {
-      console.log(`Response preview: ${responseText.substring(0, 200)}...`)
-    }
+    // Log response text for debugging
+    console.log(`Raw API response: ${responseText.substring(0, 200)}...`)
 
     // Check if the response starts with HTML tags, which indicates an error page
     if (responseText.trim().startsWith("<!DOCTYPE") || responseText.trim().startsWith("<html")) {
@@ -81,26 +79,19 @@ async function makeRequest(endpoint: string, data?: any) {
     try {
       const jsonResponse = JSON.parse(responseText)
       
-      // Check if the response has the expected structure
-      if (!jsonResponse.success && jsonResponse.error) {
-        throw new Error(`API error: ${jsonResponse.error}`)
-      }
-      
-      // For keywords_for_site endpoint, handle the special case
-      if (endpoint.includes('keywords_for_site') && jsonResponse.data) {
-        // If data is directly available, return it
-        return jsonResponse
+      // Additional validation for the expected structure
+      if (!jsonResponse) {
+        throw new Error("Empty JSON response")
       }
       
       return jsonResponse
     } catch (parseError) {
-      console.error("Error parsing response as JSON:", parseError)
-      throw new Error(
-        `Failed to parse API response as JSON. Response starts with: ${responseText.substring(0, 100)}...`,
-      )
+      console.error("Error parsing JSON response:", parseError)
+      console.error("Raw response text:", responseText.substring(0, 500))
+      throw new Error(`Failed to parse JSON response: ${parseError}`)
     }
   } catch (error) {
-    console.error(`Error making request to ${endpoint}:`, error)
+    console.error("API request error:", error)
     throw error
   }
 }
@@ -166,6 +157,7 @@ export async function getKeywordSuggestions(
         login: DATAFORSEO_LOGIN,
         password: DATAFORSEO_PASSWORD,
       }),
+      cache: "no-store",
     })
 
     if (!response.ok) {
@@ -199,116 +191,90 @@ export async function getKeywordSuggestions(
 // Get keywords for a site - updated for DataForSEO Labs API
 export async function getKeywordsForSite(
   target: string,
-  locationName = "United States",
-  languageName = "English",
-  limit = 50,
-) {
+  locationCode: number = 2840, // Default to United States (2840)
+  languageCode: string = "en", // Default to English
+  limit: number = 50
+): Promise<any> {
   try {
-    // Ensure target is properly formatted
-    const formattedTarget = target.trim().toLowerCase();
-    // Add protocol if missing
-    const targetWithProtocol = formattedTarget.startsWith('http') 
-      ? formattedTarget 
-      : `https://${formattedTarget}`;
+    console.log(`[API] Getting keywords for site: ${target}, location code: ${locationCode}, language code: ${languageCode}, limit: ${limit}`);
     
-    console.log(`[CLIENT] Making keywords_for_site request for target: ${targetWithProtocol}`);
-    
-    // Follow the same pattern as getKeywordSuggestions
     const baseUrl = getBaseUrl()
     const apiUrl = `${baseUrl}/api/dataforseo`
-
-    console.log(`Making request to DataForSEO API via: ${apiUrl}`)
-
+    
+    // Ensure target is properly formatted - remove https:// or http:// as the API expects just the domain
+    let formattedTarget = target;
+    if (formattedTarget.startsWith("https://")) {
+      formattedTarget = formattedTarget.replace("https://", "");
+    } else if (formattedTarget.startsWith("http://")) {
+      formattedTarget = formattedTarget.replace("http://", "");
+    }
+    
+    // Remove www. prefix if present
+    if (formattedTarget.startsWith("www.")) {
+      formattedTarget = formattedTarget.replace("www.", "");
+    }
+    
+    // Remove trailing slash if present
+    if (formattedTarget.endsWith("/")) {
+      formattedTarget = formattedTarget.slice(0, -1);
+    }
+    
+    console.log(`[API] Formatted target: ${formattedTarget}`);
+    
+    // Make a request using the same structure as getKeywordSuggestions
     const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        endpoint: ENDPOINTS.KEYWORDS_FOR_SITE,
+        endpoint: "/dataforseo_labs/google/keywords_for_site/live",
         data: [
           {
-            target: targetWithProtocol,
-            location_name: locationName,
-            language_name: languageName,
-            limit: Number(limit),
+            target: formattedTarget,
+            language_code: languageCode,
+            location_code: locationCode,
             include_serp_info: true,
             include_subdomains: true,
-          },
+            limit: limit
+          }
         ],
         login: DATAFORSEO_LOGIN,
         password: DATAFORSEO_PASSWORD,
       }),
-    })
-
+      cache: "no-store",
+    });
+    
+    // Check for HTTP errors
     if (!response.ok) {
-      const errorText = await response.text()
-      console.error("API response error:", response.status, errorText)
-      throw new Error(`API request failed with status ${response.status}: ${errorText}`)
-    }
-
-    const result = await response.json()
-
-    // Log the full response for debugging
-    console.log("API response:", JSON.stringify(result, null, 2).substring(0, 1000) + "...")
-
-    // Extract the items directly from the response to ensure consistent data format
-    let processedResult = result;
-    
-    // Check if the result has a tasks array (standard DataForSEO format)
-    if (result && result.tasks && Array.isArray(result.tasks) && result.tasks.length > 0) {
-      // Extract items from the first task that has results
-      for (const task of result.tasks) {
-        if (task.result && Array.isArray(task.result) && task.result.length > 0) {
-          // If task.result[0] has items, use those
-          if (task.result[0].items && Array.isArray(task.result[0].items)) {
-            console.log(`[CLIENT] Found ${task.result[0].items.length} items in task.result[0].items`);
-            processedResult = task.result[0].items;
-            break;
-          }
-          // Otherwise use task.result directly
-          console.log(`[CLIENT] Found ${task.result.length} items in task.result`);
-          processedResult = task.result;
-          break;
-        } else if (task.result && task.result.items && Array.isArray(task.result.items)) {
-          // If task.result has items property, use that
-          console.log(`[CLIENT] Found ${task.result.items.length} items in task.result.items`);
-          processedResult = task.result.items;
-          break;
-        }
-      }
+      const errorText = await response.text();
+      console.error(`[API] HTTP error: ${response.status} ${errorText}`);
+      throw new Error(`API request failed with status ${response.status}: ${errorText}`);
     }
     
-    // Ensure keyword_difficulty is correctly set
-    if (Array.isArray(processedResult)) {
-      processedResult = processedResult.map((item: any) => {
-        // Create a copy of the item
-        const enhancedItem = { ...item };
-        
-        // Set keyword_difficulty from the most reliable source
-        if (item.keyword_properties && typeof item.keyword_properties.keyword_difficulty === 'number') {
-          enhancedItem.keyword_difficulty = item.keyword_properties.keyword_difficulty;
-          console.log(`[API Client] Using keyword_properties.keyword_difficulty: ${enhancedItem.keyword_difficulty}`);
-        } else if (item.keyword_info && typeof item.keyword_info.keyword_difficulty === 'number') {
-          enhancedItem.keyword_difficulty = item.keyword_info.keyword_difficulty;
-          console.log(`[API Client] Using keyword_info.keyword_difficulty: ${enhancedItem.keyword_difficulty}`);
-        } else if (typeof item.keyword_difficulty === 'number') {
-          // Keep existing value
-          console.log(`[API Client] Using existing keyword_difficulty: ${item.keyword_difficulty}`);
-        } else {
-          // Default to medium difficulty
-          enhancedItem.keyword_difficulty = 50;
-          console.log(`[API Client] No keyword difficulty found, using default: 50`);
-        }
-        
-        return enhancedItem;
-      });
+    // Parse the response
+    const result = await response.json();
+    
+    // Log the response structure similar to getKeywordSuggestions
+    console.log("[API] Response received:", JSON.stringify({
+      success: result.success,
+      dataLength: result.data ? result.data.length : 0
+    }, null, 2));
+    
+    // Check if the request was successful
+    if (!result.success) {
+      throw new Error(result.error || "Unknown API error");
     }
     
-    console.log(`[CLIENT] Returning processed result with ${Array.isArray(processedResult) ? processedResult.length : 'unknown'} items`);
-    return processedResult;
+    // Check if data exists and is an array
+    if (!Array.isArray(result.data)) {
+      console.error("[API] Invalid data format:", result);
+      throw new Error("Invalid response format: data is not an array");
+    }
+    
+    return result;
   } catch (error) {
-    console.error("Error getting keywords for site:", error);
+    console.error("[API] Error getting keywords for site:", error);
     throw error;
   }
 }
@@ -316,9 +282,9 @@ export async function getKeywordsForSite(
 // Get keywords for categories - updated for DataForSEO Labs API
 export async function getKeywordsForCategories(
   category: string,
-  locationName = "United States",
-  languageName = "English",
-  limit = 50,
+  locationName: string = "United States",
+  languageName: string = "English",
+  limit: number = 50,
 ) {
   try {
     const data = [
@@ -346,48 +312,86 @@ export async function getKeywordsForCategories(
 // Get historical search volume - updated for DataForSEO Labs API
 export async function getHistoricalSearchVolume(
   keywords: string[],
-  locationName = "United States",
-  languageName = "English",
+  locationName: string = "United States",
+  languageName: string = "English",
 ) {
   try {
-    const data = [
-      {
-        keywords,
-        location_name: locationName,
-        language_name: languageName,
-      },
-    ]
-
-    const response = await makeRequest(ENDPOINTS.HISTORICAL_SEARCH_VOLUME, data)
-
-    if (!response || !response.tasks || !Array.isArray(response.tasks) || response.tasks.length === 0) {
-      throw new Error("Invalid response from API - missing tasks array")
+    if (!keywords || keywords.length === 0) {
+      throw new Error("Keywords array cannot be empty");
     }
 
-    return response.tasks[0]
+    console.log(`[CLIENT] Making historical_search_volume request for ${keywords.length} keywords`);
+    
+    const baseUrl = getBaseUrl()
+    const apiUrl = `${baseUrl}/api/dataforseo`
+    
+    // Make a direct request like the working endpoints do
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        endpoint: ENDPOINTS.HISTORICAL_SEARCH_VOLUME,
+        data: [
+          {
+            keywords, // This is an array of keywords
+            location_name: locationName,
+            language_name: languageName,
+          },
+        ],
+        login: DATAFORSEO_LOGIN,
+        password: DATAFORSEO_PASSWORD,
+      }),
+      cache: "no-store",
+    });
+
+    // Check for HTTP errors
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[CLIENT] HTTP error: ${response.status} ${errorText}`);
+      throw new Error(`API request failed with status ${response.status}: ${errorText}`);
+    }
+    
+    // Parse the response
+    const result = await response.json();
+    
+    // Log the response structure
+    console.log("[CLIENT] Response received:", JSON.stringify({
+      success: result.success,
+      dataLength: result.data ? result.data.length : 0
+    }, null, 2));
+    
+    // Check if the request was successful
+    if (!result.success) {
+      throw new Error(result.error || "Unknown API error");
+    }
+    
+    // Check if data exists and is an array
+    if (!Array.isArray(result.data)) {
+      console.error("[CLIENT] Invalid data format:", result);
+      throw new Error("Invalid response format: data is not an array");
+    }
+    
+    return { data: result.data };
   } catch (error) {
-    console.error("Error getting historical search volume:", error)
-    throw error
+    console.error("Error getting historical search volume:", error);
+    throw error;
   }
 }
 
 // Get bulk keyword difficulty - updated for DataForSEO Labs API
 export async function getBulkKeywordDifficulty(
   keywords: string[],
-  locationName = "United States",
-  languageName = "English",
+  locationName: string = "United States",
+  languageName: string = "English",
 ) {
   try {
+    if (!keywords || keywords.length === 0) {
+      throw new Error("Keywords array cannot be empty");
+    }
+    
     console.log(`[CLIENT] Making bulk_keyword_difficulty request for ${keywords.length} keywords`);
-    
-    // First, get search volume data for all keywords
-    const volumeData = await getHistoricalSearchVolume(keywords, locationName, languageName);
-    
-    // Create a map of keyword to volume data for easy lookup
-    const volumeMap = new Map();
-    volumeData.forEach((item: any) => {
-      volumeMap.set(item.keyword, item);
-    });
     
     // Process the keywords in batches of 100
     const batchSize = 100;
@@ -399,57 +403,70 @@ export async function getBulkKeywordDifficulty(
     
     console.log(`[CLIENT] Processing ${batches.length} batches of keywords`);
     
-    // Process each batch
-    const processedResult: { result: KeywordDifficultyResult[] } = { result: [] };
+    // Just process the first batch for now to test the API
+    const batch = batches[0];
+    console.log(`[CLIENT] Processing batch of ${batch.length} keywords`);
     
-    for (const batch of batches) {
-      console.log(`[CLIENT] Processing batch of ${batch.length} keywords`);
-      
-      // For each keyword in the batch
-      batch.forEach((keyword) => {
-        // Get the volume data for this keyword
-        const volumeData = volumeMap.get(keyword) || {
-          search_volume: 0,
-          cpc: 0,
-          competition: 0,
-          competition_level: "LOW",
-        };
-        
-        // Calculate keyword difficulty
-        let keywordDifficulty = 0;
-        
-        if (volumeData.search_volume > 0) {
-          // Standard SEO formula: higher volume + higher competition = higher difficulty
-          keywordDifficulty = Math.min(
-            Math.round((Math.log10(Math.max(volumeData.search_volume, 10)) * 10) + (volumeData.competition * 50)),
-            100
-          );
-          
-          console.log(`Calculated keyword_difficulty for ${keyword}: ${keywordDifficulty}`);
-        }
+    const baseUrl = getBaseUrl()
+    const apiUrl = `${baseUrl}/api/dataforseo`
+    
+    // Make a direct request like the working endpoints do
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        endpoint: ENDPOINTS.BULK_KEYWORD_DIFFICULTY,
+        data: [
+          {
+            keywords: batch,
+            location_name: locationName,
+            language_name: languageName,
+          },
+        ],
+        login: DATAFORSEO_LOGIN,
+        password: DATAFORSEO_PASSWORD,
+      }),
+      cache: "no-store",
+    });
 
-        processedResult.result.push({
-          keyword,
-          keyword_difficulty: keywordDifficulty,
-          search_volume: volumeData.search_volume,
-          cpc: volumeData.cpc,
-          competition: volumeData.competition,
-          competition_level: volumeData.competition_level,
-        })
-      })
+    // Check for HTTP errors
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[CLIENT] HTTP error: ${response.status} ${errorText}`);
+      throw new Error(`API request failed with status ${response.status}: ${errorText}`);
     }
     
-    console.log("Processed combined data:", JSON.stringify(processedResult.result).substring(0, 500))
+    // Parse the response
+    const result = await response.json();
     
-    return processedResult
+    // Log the response structure
+    console.log("[CLIENT] Response received:", JSON.stringify({
+      success: result.success,
+      dataLength: result.data ? result.data.length : 0
+    }, null, 2));
+    
+    // Check if the request was successful
+    if (!result.success) {
+      throw new Error(result.error || "Unknown API error");
+    }
+    
+    // Check if data exists and is an array
+    if (!Array.isArray(result.data)) {
+      console.error("[CLIENT] Invalid data format:", result);
+      throw new Error("Invalid response format: data is not an array");
+    }
+    
+    return { data: result.data };
   } catch (apiError) {
-    console.error("API error for bulk keyword difficulty:", apiError)
-    throw apiError
+    console.error("API error for bulk keyword difficulty:", apiError);
+    throw apiError;
   }
 }
 
 // Get keyword trends - updated for DataForSEO Labs API
-export async function getKeywordTrends(keyword: string, locationName = "United States", languageName = "English") {
+export async function getKeywordTrends(keyword: string, locationName: string = "United States", languageName: string = "English") {
   try {
     const data = [
       {
@@ -475,7 +492,7 @@ export async function getKeywordTrends(keyword: string, locationName = "United S
 }
 
 // Get SERP competitors - updated for DataForSEO Labs API
-export async function getSerpCompetitors(keyword: string, locationName = "United States", languageName = "English") {
+export async function getSerpCompetitors(keyword: string, locationName: string = "United States", languageName: string = "English") {
   try {
     const data = [
       {
@@ -501,65 +518,79 @@ export async function getSerpCompetitors(keyword: string, locationName = "United
 // Get keyword ideas - updated for DataForSEO Labs API
 export async function getKeywordIdeas(
   keyword: string,
-  locationName = "United States",
-  languageName = "English",
-  limit = 50,
+  locationName: string = "United States",
+  languageName: string = "English",
+  limit: number = 50,
 ) {
   try {
-    const data = [
-      {
-        keyword,
-        location_name: locationName,
-        language_name: languageName,
-        limit,
+    if (!keyword || keyword.trim() === "") {
+      throw new Error("Keyword cannot be empty");
+    }
+    
+    const baseUrl = getBaseUrl()
+    const apiUrl = `${baseUrl}/api/dataforseo`
+    
+    // Make a direct request like the working endpoints do
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    ]
+      body: JSON.stringify({
+        endpoint: ENDPOINTS.KEYWORD_IDEAS,
+        data: [
+          {
+            keyword,
+            location_name: locationName,
+            language_name: languageName,
+            limit,
+          },
+        ],
+        login: DATAFORSEO_LOGIN,
+        password: DATAFORSEO_PASSWORD,
+      }),
+      cache: "no-store",
+    });
 
-    console.log("Keyword ideas request data:", JSON.stringify(data))
-    const response = await makeRequest(ENDPOINTS.KEYWORD_IDEAS, data)
-
-    if (!response || !response.tasks || !Array.isArray(response.tasks) || response.tasks.length === 0) {
-      throw new Error("Invalid response from API - missing tasks array")
+    // Check for HTTP errors
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[CLIENT] HTTP error: ${response.status} ${errorText}`);
+      throw new Error(`API request failed with status ${response.status}: ${errorText}`);
     }
-
-    // Process the response to extract relevant data
-    const result = response.tasks[0]
-    if (!result.result || !Array.isArray(result.result) || result.result.length === 0) {
-      throw new Error("No keyword ideas found")
+    
+    // Parse the response
+    const result = await response.json();
+    
+    // Log the response structure
+    console.log("[CLIENT] Response received:", JSON.stringify({
+      success: result.success,
+      dataLength: result.data ? result.data.length : 0
+    }, null, 2));
+    
+    // Check if the request was successful
+    if (!result.success) {
+      throw new Error(result.error || "Unknown API error");
     }
-
-    // Extract and format the keyword ideas
-    const formattedResults = result.result[0].items.map((item: any) => {
-      const keywordData = item.keyword_data || {}
-      const keywordInfo = keywordData.keyword_info || {}
-
-      return {
-        keyword: keywordData.keyword || "N/A",
-        search_volume: keywordInfo.search_volume || 0,
-        cpc: keywordInfo.cpc?.toFixed(2) || "0.00",
-        competition: keywordInfo.competition || 0,
-        competition_level: keywordInfo.competition_level || "N/A",
-        keyword_difficulty: keywordData.keyword_properties?.keyword_difficulty || 0,
-        intent: keywordData.search_intent_info?.main_intent || "N/A",
-        related_keywords: item.related_keywords || [],
-        trend: keywordInfo.search_volume_trend || { monthly: 0, quarterly: 0, yearly: 0 },
-      }
-    })
-
-    // Update the response with formatted results
-    result.result = formattedResults
-    return result
+    
+    // Check if data exists and is an array
+    if (!Array.isArray(result.data)) {
+      console.error("[CLIENT] Invalid data format:", result);
+      throw new Error("Invalid response format: data is not an array");
+    }
+    
+    return { data: result.data };
   } catch (error) {
-    console.error("Error getting keyword ideas:", error)
-    throw error
+    console.error("Error getting keyword ideas:", error);
+    throw error;
   }
 }
 
 // Get search intent for keywords - updated for DataForSEO Labs API
 export async function getSearchIntent(
   keywords: string[],
-  locationName = "United States",
-  languageName = "English",
+  locationName: string = "United States",
+  languageName: string = "English",
 ) {
   try {
     console.log(`[CLIENT] Making search_intent request for ${keywords.length} keywords`);

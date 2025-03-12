@@ -90,11 +90,8 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="bg-[#0a0a0a] text-white">
-      <Sidebar />
-      <div className="ml-64 min-h-screen">
-        <div className="p-6 pt-20">{children}</div>
-      </div>
+    <div className="relative min-h-screen bg-white">
+      <Sidebar children={children} />
     </div>
   )
 }

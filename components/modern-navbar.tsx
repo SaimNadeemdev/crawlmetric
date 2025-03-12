@@ -3,26 +3,17 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import { useAuth } from "@/lib/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ModeToggle } from "@/components/mode-toggle"
-import { Home, Activity, Settings, LogOut, Menu, X, ChevronRight, BarChart } from "lucide-react"
-
-const publicMenuItems = [{ name: "Home", href: "/", icon: Home }]
-
-// Remove service tools from authenticated menu items
-const authenticatedMenuItems = [
-  { name: "Dashboard", href: "/dashboard", icon: Activity },
-  { name: "Settings", href: "/settings", icon: Settings },
-]
+import { IOSLogo } from "./ui/ios-logo"
+import { LogOut, LayoutDashboard } from "lucide-react"
 
 export function ModernNavbar() {
-  const [isOpen, setIsOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
-  const pathname = usePathname()
-  const { user, logout } = useAuth()
+  const { user, signOut } = useAuth()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -32,155 +23,97 @@ export function ModernNavbar() {
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
-  const menuItems = user ? [...publicMenuItems, ...authenticatedMenuItems] : publicMenuItems
+  // Handle logout and redirect
+  const handleLogout = async () => {
+    try {
+      // First perform the signOut operation
+      await signOut();
+      
+      // Force a complete page reload and redirect to homepage
+      // This ensures the auth state is completely refreshed
+      window.location.replace('/');
+      
+      // As a fallback, add a small timeout and force reload if redirect doesn't happen
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Even if there's an error, try to redirect
+      window.location.replace('/');
+    }
+  }
 
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? "bg-black/95 backdrop-blur-sm" : "bg-black"
+        isScrolled ? "bg-white/95 backdrop-blur-sm border-b border-[#e5e5e7]" : "bg-white"
       }`}
     >
-      <div className="container mx-auto px-4">
+      <div className="w-[90%] max-w-[2000px] mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <BarChart className="h-6 w-6 text-primary" />
-            <span className="font-bold text-xl text-white">CrawlMetrics</span>
-          </Link>
+          <motion.div
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
+            <Link href="/">
+              <IOSLogo />
+            </Link>
+          </motion.div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
-            {menuItems.map((item) => {
-              const isActive = pathname === item.href
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`px-4 py-2 rounded-lg transition-all duration-200 group ${
-                    isActive ? "bg-white/10 text-white" : "text-gray-400 hover:bg-white/5 hover:text-white"
-                  }`}
-                >
-                  <div className="flex items-center space-x-2">
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.name}</span>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-
-          {/* Right Section */}
-          <div className="flex items-center space-x-4">
-            <ModeToggle />
-
-            {user ? (
-              <div className="hidden md:flex items-center space-x-4">
-                <Button variant="ghost" className="text-gray-400 hover:text-white" onClick={logout}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
-                </Button>
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="/placeholder-user.jpg" alt={user.name} />
-                  <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-              </div>
-            ) : (
-              <div className="hidden md:flex items-center space-x-4">
-                <Link href="/login">
-                  <Button variant="ghost" className="text-gray-400 hover:text-white">
-                    Login
+          {/* Center Section - Dashboard Link (only when logged in) */}
+          <div className="flex-1 flex justify-center">
+            {user && (
+              <motion.div
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+              >
+                <Link href="/dashboard/main">
+                  <Button 
+                    variant="ghost" 
+                    className="text-[#06c] hover:text-[#06c]/90 hover:bg-[#06c]/10 rounded-full px-5"
+                  >
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    Dashboard
                   </Button>
                 </Link>
-                <Link href="/register">
-                  <Button className="bg-primary hover:bg-primary/90">Sign Up</Button>
-                </Link>
-              </div>
+              </motion.div>
             )}
+          </div>
 
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="md:hidden p-2 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white"
-            >
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
+          {/* Right Section - Auth Buttons */}
+          <div className="flex items-center space-x-3">
+            {user ? (
+              <Button
+                onClick={handleLogout}
+                variant="ghost"
+                className="text-[#06c] hover:text-[#06c]/90 hover:bg-[#06c]/10 rounded-full px-5"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign out
+              </Button>
+            ) : (
+              <>
+                <Button
+                  asChild
+                  variant="ghost"
+                  className="text-[#06c] hover:text-[#06c]/90 hover:bg-[#06c]/10 rounded-full px-5"
+                >
+                  <Link href="/login">Sign in</Link>
+                </Button>
+                <Button
+                  asChild
+                  className="bg-[#06c] hover:bg-[#06c]/90 text-white rounded-full px-5"
+                >
+                  <Link href="/register">Sign up</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
-
-      {/* Mobile Menu */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-black border-t border-white/10"
-          >
-            <div className="container mx-auto px-4 py-4">
-              <div className="space-y-1">
-                {menuItems.map((item) => {
-                  const isActive = pathname === item.href
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setIsOpen(false)}
-                      className={`flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 ${
-                        isActive ? "bg-white/10 text-white" : "text-gray-400 hover:bg-white/5 hover:text-white"
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <item.icon className="h-5 w-5" />
-                        <span>{item.name}</span>
-                      </div>
-                      <ChevronRight className="h-4 w-4" />
-                    </Link>
-                  )
-                })}
-              </div>
-
-              {user ? (
-                <div className="mt-6 pt-6 border-t border-white/10">
-                  <div className="flex items-center space-x-3 px-4 py-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src="/placeholder-user.jpg" alt={user.name} />
-                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="text-sm font-medium text-white">{user.name}</div>
-                      <div className="text-xs text-gray-400">{user.email}</div>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    className="w-full mt-2 text-gray-400 hover:text-white"
-                    onClick={() => {
-                      logout()
-                      setIsOpen(false)
-                    }}
-                  >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Logout
-                  </Button>
-                </div>
-              ) : (
-                <div className="mt-6 pt-6 border-t border-white/10 space-y-2">
-                  <Link href="/login" onClick={() => setIsOpen(false)}>
-                    <Button variant="ghost" className="w-full text-gray-400 hover:text-white">
-                      Login
-                    </Button>
-                  </Link>
-                  <Link href="/register" onClick={() => setIsOpen(false)}>
-                    <Button className="w-full bg-primary hover:bg-primary/90">Sign Up</Button>
-                  </Link>
-                </div>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </nav>
   )
 }
-

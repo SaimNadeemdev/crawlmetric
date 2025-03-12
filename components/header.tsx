@@ -17,6 +17,7 @@ import { ModeToggle } from "@/components/mode-toggle"
 import { Menu, BarChart, Settings, LogOut, Grid, Search, Home } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Sidebar } from "@/components/sidebar"
+import { IOSLogo } from "./ui/ios-logo"
 
 export default function Header() {
   const { user, logout } = useAuth()
@@ -47,12 +48,9 @@ export default function Header() {
         isScrolled ? "bg-background/80 backdrop-blur-sm border-b" : "bg-[#0A0A0B]"
       }`}
     >
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center space-x-2">
-            <BarChart className="h-6 w-6 text-white" />
-            <span className="font-bold text-xl text-white">CrawlMetrics</span>
-          </Link>
+      <div className="w-full flex h-16 items-center justify-between">
+        <div className="flex items-center gap-6 pl-4">
+          <IOSLogo />
 
           <nav className="hidden md:flex items-center gap-6">
             {navigation.map((item) => (
@@ -70,7 +68,7 @@ export default function Header() {
           </nav>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 pr-4">
           <ModeToggle />
 
           {user ? (

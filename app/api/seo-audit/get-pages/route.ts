@@ -12,6 +12,9 @@ export async function GET(request: NextRequest) {
     const taskId = request.nextUrl.searchParams.get("taskId")
     const limit = Number.parseInt(request.nextUrl.searchParams.get("limit") || "100", 10)
     const offset = Number.parseInt(request.nextUrl.searchParams.get("offset") || "0", 10)
+    const maxPages = Number.parseInt(request.nextUrl.searchParams.get("maxPages") || "100", 10)
+
+    console.log(`Processing request with maxPages: ${maxPages}, limit: ${limit}`)
 
     if (!taskId) {
       return NextResponse.json({ error: "Task ID is required" }, { status: 400 })
@@ -22,8 +25,14 @@ export async function GET(request: NextRequest) {
     const apiBody = [
       {
         id: taskId,
-        limit,
+        limit: Math.min(limit, maxPages), // Limit results based on maxPages
         offset,
+        // Add filters for HTML resources as per documentation
+        filters: [
+          ["resource_type", "=", "html"]
+        ],
+        // Order by content word count descending
+        order_by: ["meta.content.plain_text_word_count,desc"]
       },
     ]
 
@@ -44,10 +53,22 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json()
+    
+    // Log the response structure to help with debugging
+    console.log("DataForSEO pages response structure:", 
+      JSON.stringify({
+        status_code: data.status_code,
+        tasks_count: data.tasks_count,
+        tasks_error: data.tasks_error,
+        has_tasks: !!data.tasks,
+        tasks_length: data.tasks?.length,
+        max_pages_requested: maxPages
+      })
+    )
+    
     return NextResponse.json(data)
   } catch (error) {
     console.error("Error getting task pages:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
-

@@ -86,13 +86,18 @@ export function DataTable<TData, TValue>({
         </div>
       )}
       <div className="rounded-md border">
-        <Table>
+        <Table className="data-table">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup: HeaderGroup<TData>) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header: Header<TData, unknown>) => {
                   return (
-                    <TableHead key={header.id}>
+                    <TableHead 
+                      key={header.id} 
+                      style={{
+                        width: header.column.columnDef.size ? `${header.column.columnDef.size}px` : 'auto'
+                      }}
+                    >
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -107,10 +112,11 @@ export function DataTable<TData, TValue>({
           </TableHeader>
           <TableBody>
             {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row: Row<TData>) => (
+              table.getRowModel().rows.map((row: Row<TData>, index: number) => (
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
+                  style={{ '--row-index': index } as React.CSSProperties}
                 >
                   {row.getVisibleCells().map((cell: Cell<TData, unknown>) => (
                     <TableCell key={cell.id}>

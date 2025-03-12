@@ -13,6 +13,10 @@ import { formatNumber } from "@/lib/utils"
 import { cn } from "@/lib/utils"
 import type { KeywordResearchResults } from "@/types/keyword-research"
 import { ArrowLeft, Clock } from "lucide-react"
+import { DataTable } from "@/components/ui/data-table"
+import { getColumns } from "./columns"
+import { Search, Download } from "lucide-react"
+import { Input } from "@/components/ui/input"
 
 interface KeywordResearchHistoryItemProps {
   result: KeywordResearchResults
@@ -41,24 +45,29 @@ export function KeywordResearchHistoryItem({ result, onBack }: KeywordResearchHi
       return []
     }
     
+    console.log("KeywordResearchHistoryItem - FULL RESULT:", JSON.stringify(result, null, 2));
+    
     // Helper function to flatten nested API responses
     const flattenApiResponse = (data: any): any[] => {
-      console.log("KeywordResearchHistoryItem - Original data structure:", data)
+      console.log("KeywordResearchHistoryItem - Original data structure:", JSON.stringify(data, null, 2));
       
       // Check if data is already an array
       if (Array.isArray(data)) {
+        console.log("KeywordResearchHistoryItem - Data is already an array with", data.length, "items");
         return data;
       }
 
       // Check if data has a result property that is an array
       if (data && data.result && Array.isArray(data.result)) {
+        console.log("KeywordResearchHistoryItem - Found result array with", data.result.length, "items");
         return data.result;
       }
       
       // Check if data has a tasks property that contains result arrays
       if (data && data.tasks && Array.isArray(data.tasks)) {
+        console.log("KeywordResearchHistoryItem - Found tasks array with", data.tasks.length, "items");
         // Flatten tasks data
-        return data.tasks.flatMap((task: any) => {
+        const flattenedData = data.tasks.flatMap((task: any) => {
           if (task.result && Array.isArray(task.result)) {
             return task.result;
           } else if (task.result && task.result.items && Array.isArray(task.result.items)) {
@@ -67,15 +76,151 @@ export function KeywordResearchHistoryItem({ result, onBack }: KeywordResearchHi
           }
           return [];
         });
+        console.log("KeywordResearchHistoryItem - Flattened tasks data:", flattenedData.length, "items");
+        return flattenedData;
       }
 
       // If we can't find an array, return an empty array
+      console.log("KeywordResearchHistoryItem - Could not find array structure, returning empty array");
       return [];
     }
     
     // Ensure data is an array
-    const data = flattenApiResponse(result.data)
-    console.log("KeywordResearchHistoryItem - Flattened data:", data)
+    const data = flattenApiResponse(result.data);
+    console.log("KeywordResearchHistoryItem - Flattened data:", data.length, "items");
+    if (data.length > 0) {
+      console.log("KeywordResearchHistoryItem - First item in flattened data:", JSON.stringify(data[0], null, 2));
+    }
+    
+    // SPECIAL HANDLING FOR HISTORICAL DATA - ROBUST VERSION
+    if (result.mode === "historical_search_volume") {
+      console.log("KeywordResearchHistoryItem - SPECIAL HANDLING for historical search volume");
+      console.log("KeywordResearchHistoryItem - Original data structure:", JSON.stringify(data, null, 2));
+      const expandedData: any[] = [];
+      
+      // Process each item in the data array
+      data.forEach((item, index) => {
+        console.log(`KeywordResearchHistoryItem - Processing item ${index}:`, JSON.stringify(item, null, 2));
+        
+        // Extract the keyword
+        const keyword = item.keyword || "";
+        
+        // Extract months from different possible locations in the data structure
+        let months = [];
+        if (item.months && Array.isArray(item.months)) {
+          console.log(`KeywordResearchHistoryItem - Found months array in item ${index} with ${item.months.length} entries`);
+          months = item.months;
+        } else if (item.keyword_data && item.keyword_data.keyword_info && 
+                  item.keyword_data.keyword_info.monthly_searches && 
+                  Array.isArray(item.keyword_data.keyword_info.monthly_searches)) {
+          console.log(`KeywordResearchHistoryItem - Found monthly_searches array in item ${index} with ${item.keyword_data.keyword_info.monthly_searches.length} entries`);
+          months = item.keyword_data.keyword_info.monthly_searches;
+        }
+        
+        console.log(`KeywordResearchHistoryItem - Extracted months for item ${index}:`, JSON.stringify(months, null, 2));
+        
+        if (months.length > 0) {
+          // Sort months by year and month (newest first)
+          const sortedMonths = [...months].sort((a: any, b: any) => {
+            if (a.year !== b.year) return b.year - a.year;
+            return b.month - a.month;
+          });
+          
+          console.log(`KeywordResearchHistoryItem - Sorted months for item ${index}:`, JSON.stringify(sortedMonths, null, 2));
+          
+          // Create one row per month
+          sortedMonths.forEach((month, monthIndex) => {
+            // Create a new object for each month instead of copying the entire item
+            const expandedItem = {
+              keyword: keyword,
+              year: month.year,
+              month: month.month,
+              monthName: getMonthName(month.month),
+              search_volume: month.search_volume || 0,
+              cpc: item.cpc || (item.keyword_data?.keyword_info?.cpc) || 0,
+              competition: item.competition || (item.keyword_data?.keyword_info?.competition) || 0,
+              competition_level: item.competition_level || (item.keyword_data?.keyword_info?.competition_level) || "",
+              keyword_difficulty: item.keyword_difficulty || (item.keyword_data?.keyword_info?.keyword_difficulty) || 0,
+              yearMonth: `${month.year}-${month.month.toString().padStart(2, '0')}`
+            };
+            
+            console.log(`KeywordResearchHistoryItem - Created expanded item for month ${monthIndex}:`, JSON.stringify(expandedItem, null, 2));
+            
+            expandedData.push(expandedItem);
+          });
+        } else {
+          // If no months data, just add the item as is
+          console.log(`KeywordResearchHistoryItem - No months data for item ${index}, using as is`);
+          expandedData.push(item);
+        }
+      });
+      
+      console.log("KeywordResearchHistoryItem - Final historical data has", expandedData.length, "items");
+      console.log("KeywordResearchHistoryItem - Sample of expanded data (first 3 items):", 
+        JSON.stringify(expandedData.slice(0, 3), null, 2));
+      return expandedData;
+    }
+    
+    // For keyword ideas, normalize the data structure
+    if (result.mode === "keyword_ideas" && data.length > 0) {
+      console.log("KeywordResearchHistoryItem - Processing keyword ideas data");
+      
+      // Extract ideas from nested structure if needed
+      const normalizedData = data.map(item => {
+        // Create a normalized item with standard properties
+        const normalizedItem: any = {
+          keyword: item.keyword || "",
+          search_volume: 0,
+          cpc: 0,
+          competition: 0,
+          competition_level: "N/A",
+          difficulty: 0,
+          difficulty_level: "N/A",
+        };
+        
+        // Extract from item.keyword_data if it exists
+        if (item.keyword_data) {
+          // Get keyword info
+          if (item.keyword_data.keyword_info) {
+            const info = item.keyword_data.keyword_info;
+            normalizedItem.search_volume = info.search_volume || 0;
+            normalizedItem.cpc = info.cpc || 0;
+            normalizedItem.competition = info.competition_index || 0;
+          }
+          
+          // Get SEO difficulty info
+          if (item.keyword_data.keyword_properties && item.keyword_data.keyword_properties.serp_info) {
+            normalizedItem.difficulty = item.keyword_data.keyword_properties.serp_info.seo_difficulty || 0;
+          }
+        }
+        
+        // Get search volume directly if it exists
+        if (item.search_volume !== undefined) {
+          normalizedItem.search_volume = item.search_volume;
+        }
+        
+        // Get CPC directly if it exists
+        if (item.cpc !== undefined) {
+          normalizedItem.cpc = item.cpc;
+        }
+        
+        // Get competition directly if it exists
+        if (item.competition !== undefined) {
+          normalizedItem.competition = item.competition;
+        }
+        
+        // Set competition level based on competition value
+        normalizedItem.competition_level = getCompetitionLevel(normalizedItem.competition);
+        
+        // Set difficulty level based on difficulty value
+        normalizedItem.difficulty_level = getDifficultyLevel(normalizedItem.difficulty);
+        
+        return normalizedItem;
+      });
+      
+      console.log("KeywordResearchHistoryItem - Normalized keyword ideas data:", normalizedData.length, "items");
+      return normalizedData;
+    }
     
     // Normalize data structure for consistency
     const normalizedData = data.map((item: any) => {
@@ -188,6 +333,31 @@ export function KeywordResearchHistoryItem({ result, onBack }: KeywordResearchHi
     }
   }
 
+  // Get difficulty level based on score
+  const getDifficultyLevel = (score: number): string => {
+    if (score >= 80) return "Very Hard"
+    if (score >= 60) return "Hard"
+    if (score >= 40) return "Medium"
+    if (score >= 20) return "Easy"
+    return "Very Easy"
+  }
+
+  // Get competition level based on competition score
+  const getCompetitionLevel = (score: number): string => {
+    if (score >= 0.8) return "Very High";
+    if (score >= 0.6) return "High";
+    if (score >= 0.4) return "Medium";
+    if (score >= 0.2) return "Low";
+    return "Very Low";
+  }
+
+  // Helper function to get month name
+  const getMonthName = (monthNumber: number): string => {
+    const monthNames = ["January", "February", "March", "April", "May", "June", 
+                        "July", "August", "September", "October", "November", "December"];
+    return monthNames[monthNumber - 1] || "";
+  };
+
   // Helper function to get difficulty color
   const getDifficultyColor = (score: number): string => {
     if (score >= 80) return "bg-red-500"
@@ -286,29 +456,34 @@ export function KeywordResearchHistoryItem({ result, onBack }: KeywordResearchHi
     return value
   }
 
-  const tableData = processData()
-  const chartDataProcessed = processChartData()
-
-  // Determine columns based on the first item
-  const getColumns = () => {
-    if (tableData.length === 0) return []
-    
-    const firstItem = tableData[0]
-    console.log("KeywordResearchHistoryItem - First item for columns:", firstItem)
-    
-    const columnKeys = Object.keys(firstItem).filter(
-      (key) => key !== "categories" && key !== "trend" && key !== "months" && 
-              key !== "keyword_data" && key !== "tasks" && key !== "result" &&
-              key !== "competition_level" // Remove competition_level to avoid duplication
-    )
-    
-    console.log("KeywordResearchHistoryItem - Column keys:", columnKeys)
-    return columnKeys
+  // Get the actual data to display in the table
+  const tableData = processData();
+  console.log("KeywordResearchHistoryItem - Table data:", tableData);
+  console.log("KeywordResearchHistoryItem - Table data structure:", JSON.stringify(tableData, null, 2));
+  console.log("KeywordResearchHistoryItem - Is table data an array?", Array.isArray(tableData));
+  if (Array.isArray(tableData) && tableData.length > 0) {
+    console.log("KeywordResearchHistoryItem - First table data item:", JSON.stringify(tableData[0], null, 2));
+    console.log("KeywordResearchHistoryItem - Number of table data items:", tableData.length);
+    console.log("KeywordResearchHistoryItem - Table data columns:", Object.keys(tableData[0]));
   }
 
-  const columns = getColumns()
+  // Chart data for visualization
+  const chartDataProcessed = processChartData();
+  console.log("KeywordResearchHistoryItem - Chart data:", chartDataProcessed);
+  
+  // Filter results based on search query
+  const [searchFilter, setSearchFilter] = useState("");
+  
+  const filteredTableData = searchFilter
+    ? tableData.filter((item) => item.keyword?.toLowerCase().includes(searchFilter.toLowerCase()))
+    : tableData;
+
+  // Use the imported getColumns function from columns.tsx
+  console.log("KeywordResearchHistoryItem - Using imported getColumns with mode:", result.mode);
+  const columns = getColumns(filteredTableData, result.mode)
   console.log("KeywordResearchHistoryItem - Final columns:", columns)
 
+  // Format column names for display
   const formatColumnName = (column: string) => {
     switch (column) {
       case "keyword_difficulty":
@@ -326,6 +501,46 @@ export function KeywordResearchHistoryItem({ result, onBack }: KeywordResearchHi
           .join(" ")
     }
   }
+
+  // Export data to CSV
+  const exportToCsv = (data: any[]) => {
+    if (!data || data.length === 0) return;
+    
+    // Get headers from first item
+    const headers = Object.keys(data[0]).filter(key => 
+      key !== 'keyword_data' && 
+      key !== 'months' && 
+      key !== 'tasks' && 
+      key !== 'result'
+    );
+    
+    // Create CSV content
+    let csvContent = headers.join(',') + '\n';
+    
+    // Add rows
+    data.forEach(item => {
+      const row = headers.map(header => {
+        const value = item[header];
+        // Handle strings with commas by wrapping in quotes
+        if (typeof value === 'string' && value.includes(',')) {
+          return `"${value}"`;
+        }
+        return value !== undefined && value !== null ? value : '';
+      });
+      csvContent += row.join(',') + '\n';
+    });
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `keyword-research-${result.mode}-${new Date().toISOString().slice(0, 10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <Card className="w-full shadow-lg border-0 bg-white dark:bg-gray-800 overflow-hidden">
@@ -414,7 +629,7 @@ export function KeywordResearchHistoryItem({ result, onBack }: KeywordResearchHi
             <div className="p-4">
               <div className="flex justify-between items-center mb-4">
                 <div className="text-sm text-gray-500 dark:text-gray-400">
-                  {tableData.length} {tableData.length === 1 ? 'result' : 'results'} found
+                  {filteredTableData.length} {filteredTableData.length === 1 ? 'result' : 'results'} found
                 </div>
                 {/* Add export button or other controls here if needed */}
               </div>
@@ -422,48 +637,42 @@ export function KeywordResearchHistoryItem({ result, onBack }: KeywordResearchHi
             
             <ScrollArea className="h-[calc(100vh-350px)] w-full">
               <div className="relative overflow-x-auto">
-                <Table className="w-full">
-                  <TableHeader className="bg-gray-50 dark:bg-gray-800 sticky top-0 z-10">
-                    <TableRow>
-                      {columns.map((column) => (
-                        <TableHead 
-                          key={column} 
-                          className="whitespace-nowrap font-semibold text-gray-700 dark:text-gray-300 px-4 py-3 text-left first:pl-6"
+                <div className="flex items-center justify-between mb-4 px-4">
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    {filteredTableData.length} {filteredTableData.length === 1 ? 'result' : 'results'} found
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Filter keywords..."
+                        value={searchFilter}
+                        onChange={(e) => setSearchFilter(e.target.value)}
+                        className="pl-9 ios-button border-0 w-[200px]"
+                      />
+                      {searchFilter && (
+                        <button 
+                          onClick={() => setSearchFilter("")}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground"
                         >
-                          {formatColumnName(column)}
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {tableData.length > 0 ? (
-                      tableData.map((item, index) => (
-                        <TableRow 
-                          key={index}
-                          className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                        >
-                          {columns.map((column) => (
-                            <TableCell 
-                              key={`${index}-${column}`}
-                              className="px-4 py-3 first:pl-6 border-b border-gray-100 dark:border-gray-700"
-                            >
-                              {renderCellContent(column, item[column])}
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell 
-                          colSpan={columns.length || 1} 
-                          className="text-center py-8 text-gray-500 dark:text-gray-400"
-                        >
-                          No data available
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M18 6 6 18"></path>
+                            <path d="m6 6 12 12"></path>
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => exportToCsv(filteredTableData)}
+                      className="ios-button border-0"
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Export
+                    </Button>
+                  </div>
+                </div>
+                <DataTable columns={columns} data={filteredTableData} />
               </div>
             </ScrollArea>
           </TabsContent>

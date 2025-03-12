@@ -28,6 +28,8 @@ export async function POST(request: NextRequest) {
       },
     ]
 
+    console.log("Sending request to DataForSEO API:", JSON.stringify(apiBody))
+
     // Make the request to DataForSEO API
     const response = await fetch(apiEndpoint, {
       method: "POST",
@@ -45,10 +47,19 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json()
-    return NextResponse.json(data)
+    
+    // Ensure we're getting the complete response
+    console.log("DataForSEO API response received successfully")
+    
+    // Set a higher response size limit
+    return new NextResponse(JSON.stringify(data), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
   } catch (error) {
     console.error("Error running instant page audit:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
-

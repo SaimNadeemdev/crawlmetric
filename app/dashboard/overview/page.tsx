@@ -16,6 +16,20 @@ import Link from "next/link"
 import { createClient } from "@supabase/supabase-js"
 import DashboardLayout from "@/app/dashboard-layout"
 
+// Initialize Supabase client with hardcoded credentials for client-side use
+const supabaseUrl = 'https://nzxgnnpthtefahosnolm.supabase.co'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56eGdubnB0aHRlZmFob3Nub2xtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEzMDQ1MDcsImV4cCI6MjA1Njg4MDUwN30.kPPrr1NaDkl1OxP9g0oO9l2tWnKWNw2h4LXiDD7v3Mg'
+
+// Create a Supabase client
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    storageKey: "supabase.auth.token",
+  },
+})
+
 export default function OverviewPage() {
   const router = useRouter()
   const { toast } = useToast()
@@ -28,77 +42,31 @@ export default function OverviewPage() {
   const [sortBy, setSortBy] = useState("keyword")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
   const [domainFilter, setDomainFilter] = useState<string>("all")
-  const [hasSession, setHasSession] = useState(false)
-  const [isCheckingSession, setIsCheckingSession] = useState(true)
+  const [user, setUser] = useState<any>(null)
 
-  // Check for session directly with Supabase
+  // Check for session
   useEffect(() => {
-    const checkSession = async () => {
+    const getUser = async () => {
       try {
-        // Use hardcoded Supabase credentials for client-side
-        const supabaseUrl = 'https://nzxgnnpthtefahosnolm.supabase.co'
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56eGdubnB0aHRlZmFob3Nub2xtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEzMDQ1MDcsImV4cCI6MjA1Njg4MDUwN30.kPPrr1NaDkl1OxP9g0oO9l2tWnKWNw2h4LXiDD7v3Mg'
+        const { data: { user } } = await supabase.auth.getUser()
         
-        const supabase = createClient(supabaseUrl, supabaseKey, {
-          auth: {
-            persistSession: true,
-            autoRefreshToken: true,
-            detectSessionInUrl: true,
-            storageKey: 'supabase.auth.token',
-          }
-        })
-        
-        // Check for session in localStorage first
-        const storedSession = localStorage.getItem('supabase.auth.token')
-        if (storedSession) {
-          console.log("Overview - Found stored session in localStorage")
-          try {
-            const parsedSession = JSON.parse(storedSession)
-            if (parsedSession && parsedSession.access_token) {
-              console.log("Overview - Using stored session from localStorage")
-              setHasSession(true)
-            }
-          } catch (e) {
-            console.error("Overview - Error parsing stored session:", e)
-          }
-        }
-        
-        // Get session from Supabase
-        const { data, error } = await supabase.auth.getSession()
-        
-        if (error) {
-          console.error("Overview - Error getting session:", error.message)
-          setHasSession(false)
-        } else if (data.session) {
-          console.log("Overview - Session check successful, user is authenticated")
-          setHasSession(true)
+        if (user) {
+          setUser(user)
         } else {
-          console.log("Overview - No session found")
-          setHasSession(false)
+          router.push('/login')
         }
       } catch (error) {
-        console.error("Overview - Unexpected error checking session:", error)
-        setHasSession(false)
-      } finally {
-        setIsCheckingSession(false)
+        console.error("Error getting user:", error)
+        router.push('/login')
       }
     }
     
-    checkSession()
-  }, [])
-
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!isCheckingSession && !hasSession) {
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login'
-      }
-    }
-  }, [hasSession, isCheckingSession])
+    getUser()
+  }, [router])
 
   useEffect(() => {
     const loadKeywords = async () => {
-      if (hasSession) {
+      if (user) {
         try {
           setIsLoading(true)
           const data = await fetchKeywords()
@@ -117,10 +85,10 @@ export default function OverviewPage() {
       }
     }
 
-    if (!isCheckingSession && hasSession) {
+    if (user) {
       loadKeywords()
     }
-  }, [hasSession, isCheckingSession, toast])
+  }, [user, toast])
 
   useEffect(() => {
     // Filter and sort keywords whenever dependencies change
@@ -237,15 +205,7 @@ export default function OverviewPage() {
   // Get unique domains for filter
   const uniqueDomains = Array.from(new Set(keywords.map((k) => k.domain)))
 
-  if (isCheckingSession) {
-    return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    )
-  }
-
-  if (!hasSession) {
+  if (!user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] p-6 text-center">
         <ShieldAlert className="h-12 w-12 text-destructive mb-4" />
@@ -260,44 +220,81 @@ export default function OverviewPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="container mx-auto p-4 space-y-6">
-          {/* Rest of your existing dashboard content */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-            <h1 className="text-3xl font-bold">Keywords Overview</h1>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={handleRefreshKeywords} disabled={isRefreshing}>
-                <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-                Refresh Rankings
+      <div className="container mx-auto p-4 space-y-6 apple-scrollbar">
+        <div className="flex flex-col space-y-2">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-medium tracking-tight text-white apple-heading">Keywords Overview</h1>
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefreshKeywords}
+                disabled={isRefreshing}
+                className="apple-button-secondary rounded-xl"
+              >
+                {isRefreshing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Refreshing...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Refresh All
+                  </>
+                )}
               </Button>
-              <Button onClick={handleExportPdf} disabled={isExporting || filteredKeywords.length === 0}>
-                <FileDown className="mr-2 h-4 w-4" />
-                Export Report
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportPdf}
+                disabled={isExporting || keywords.length === 0}
+                className="apple-button-secondary rounded-xl"
+              >
+                {isExporting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <FileDown className="mr-2 h-4 w-4" />
+                    Export PDF
+                  </>
+                )}
               </Button>
             </div>
           </div>
+          
+          <p className="text-gray-400 text-sm apple-text">
+            View and manage all your tracked keywords across different domains.
+          </p>
+        </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Keyword Rankings</CardTitle>
-              <CardDescription>Monitor all your keyword rankings in one place</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <Card className="apple-card border border-white/5 bg-black/40 backdrop-blur-md rounded-xl shadow-lg">
+          <CardHeader>
+            <CardTitle className="text-xl font-medium tracking-tight apple-heading">Keywords List</CardTitle>
+            <CardDescription className="text-gray-400 apple-subheading">
+              {filteredKeywords.length} keywords tracked across {uniqueDomains.length} domains
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
                   <Input
                     placeholder="Search keywords or domains..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full"
+                    className="bg-black/20 border-white/10 text-white placeholder:text-gray-500 rounded-xl"
                   />
                 </div>
-                <div className="w-full md:w-64">
+                <div className="flex gap-2">
                   <Select value={domainFilter} onValueChange={setDomainFilter}>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-[180px] bg-black/20 border-white/10 text-white rounded-xl">
                       <SelectValue placeholder="Filter by domain" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-black/90 border-white/10 text-white backdrop-blur-xl">
                       <SelectItem value="all">All Domains</SelectItem>
                       {uniqueDomains.map((domain) => (
                         <SelectItem key={domain} value={domain}>
@@ -306,88 +303,104 @@ export default function OverviewPage() {
                       ))}
                     </SelectContent>
                   </Select>
+                  <Select value={sortBy} onValueChange={setSortBy}>
+                    <SelectTrigger className="w-[180px] bg-black/20 border-white/10 text-white rounded-xl">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-black/90 border-white/10 text-white backdrop-blur-xl">
+                      <SelectItem value="keyword">Keyword</SelectItem>
+                      <SelectItem value="domain">Domain</SelectItem>
+                      <SelectItem value="rank">Current Rank</SelectItem>
+                      <SelectItem value="change">Rank Change</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                    className="h-10 w-10 rounded-xl bg-black/20 border border-white/10 text-white hover:bg-white/10"
+                  >
+                    {sortOrder === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
+                  </Button>
                 </div>
               </div>
 
               {isLoading ? (
                 <div className="flex justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin" />
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
                 </div>
-              ) : filteredKeywords.length > 0 ? (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleSort("keyword")}>
-                          Keyword {sortBy === "keyword" && (sortOrder === "asc" ? "↑" : "↓")}
-                        </TableHead>
-                        <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleSort("domain")}>
-                          Domain {sortBy === "domain" && (sortOrder === "asc" ? "↑" : "↓")}
-                        </TableHead>
-                        <TableHead
-                          className="cursor-pointer hover:bg-muted/50 text-right"
-                          onClick={() => toggleSort("rank")}
-                        >
-                          Rank {sortBy === "rank" && (sortOrder === "asc" ? "↑" : "↓")}
-                        </TableHead>
-                        <TableHead
-                          className="cursor-pointer hover:bg-muted/50 text-right"
-                          onClick={() => toggleSort("change")}
-                        >
-                          Change {sortBy === "change" && (sortOrder === "asc" ? "↑" : "↓")}
-                        </TableHead>
-                        <TableHead className="text-right">Best</TableHead>
-                        <TableHead className="text-right">Last Updated</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+              ) : filteredKeywords.length === 0 ? (
+                <div className="text-center py-8 border border-dashed border-white/10 rounded-xl bg-black/20 backdrop-blur-md">
+                  <p className="text-gray-400 apple-text">No keywords found matching your criteria.</p>
+                  <Link href="/dashboard/main">
+                    <Button className="mt-4 apple-button-secondary rounded-xl">
+                      Add New Keywords
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-white/5 overflow-hidden">
+                  <Table className="w-full">
+                    <TableHeader className="bg-black/30 backdrop-blur-md">
+                      <TableRow className="border-white/5 hover:bg-white/5">
+                        <TableHead className="text-gray-400 w-1/3">Keyword</TableHead>
+                        <TableHead className="text-gray-400">Domain</TableHead>
+                        <TableHead className="text-gray-400 text-right">Current Rank</TableHead>
+                        <TableHead className="text-gray-400 text-right">Previous Rank</TableHead>
+                        <TableHead className="text-gray-400 text-right">Change</TableHead>
+                        <TableHead className="text-gray-400 text-right">Last Updated</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {filteredKeywords.map((keyword) => {
-                        // Calculate change
-                        let change = 0
-                        let changeElement = <Minus className="h-4 w-4" />
-
-                        if (keyword.previous_rank && keyword.current_rank) {
-                          change = keyword.previous_rank - keyword.current_rank
-                          if (change > 0) {
-                            changeElement = (
-                              <span className="flex items-center text-green-600 dark:text-green-500">
-                                <ArrowUp className="h-4 w-4 mr-1" />
-                                {Math.abs(change)}
-                              </span>
-                            )
-                          } else if (change < 0) {
-                            changeElement = (
-                              <span className="flex items-center text-red-600 dark:text-red-500">
-                                <ArrowDown className="h-4 w-4 mr-1" />
-                                {Math.abs(change)}
-                              </span>
-                            )
-                          }
-                        }
+                        const rankChange = keyword.previous_rank && keyword.current_rank
+                          ? keyword.previous_rank - keyword.current_rank
+                          : 0
 
                         return (
-                          <TableRow key={keyword.id}>
-                            <TableCell className="font-medium">
-                              <Link href={`/dashboard?keyword=${keyword.id}`} className="hover:underline text-primary">
+                          <TableRow 
+                            key={keyword.id} 
+                            className="border-white/5 hover:bg-white/5 transition-colors"
+                          >
+                            <TableCell className="font-medium text-white">
+                              <Link 
+                                href={`/dashboard/main?keyword=${keyword.id}`}
+                                className="hover:text-blue-400 transition-colors"
+                              >
                                 {keyword.keyword}
                               </Link>
                             </TableCell>
-                            <TableCell>{keyword.domain}</TableCell>
-                            <TableCell className="text-right">
-                              {keyword.current_rank ? `#${keyword.current_rank}` : "N/A"}
+                            <TableCell className="text-gray-300">{keyword.domain}</TableCell>
+                            <TableCell className="text-right font-medium">
+                              {keyword.current_rank ? (
+                                <span className="text-white">{keyword.current_rank}</span>
+                              ) : (
+                                <span className="text-gray-500">Not ranking</span>
+                              )}
                             </TableCell>
-                            <TableCell className="text-right">{changeElement}</TableCell>
-                            <TableCell className="text-right">
-                              {keyword.best_rank ? `#${keyword.best_rank}` : "N/A"}
+                            <TableCell className="text-right text-gray-300">
+                              {keyword.previous_rank || <span className="text-gray-500">-</span>}
                             </TableCell>
                             <TableCell className="text-right">
+                              {rankChange > 0 ? (
+                                <span className="text-green-400 flex items-center justify-end">
+                                  <ArrowUp className="h-4 w-4 mr-1" />
+                                  {rankChange}
+                                </span>
+                              ) : rankChange < 0 ? (
+                                <span className="text-red-400 flex items-center justify-end">
+                                  <ArrowDown className="h-4 w-4 mr-1" />
+                                  {Math.abs(rankChange)}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 flex items-center justify-end">
+                                  <Minus className="h-4 w-4 mr-1" />
+                                  0
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right text-gray-300">
                               {new Date(keyword.last_updated).toLocaleDateString()}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button variant="ghost" size="sm" asChild>
-                                <Link href={`/dashboard?keyword=${keyword.id}`}>Details</Link>
-                              </Button>
                             </TableCell>
                           </TableRow>
                         )
@@ -395,29 +408,10 @@ export default function OverviewPage() {
                     </TableBody>
                   </Table>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <p className="text-muted-foreground mb-4">
-                    {searchQuery || domainFilter !== "all"
-                      ? "No keywords match your search criteria"
-                      : "No keywords found. Add your first keyword to start tracking."}
-                  </p>
-                  {(searchQuery || domainFilter !== "all") && (
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setSearchQuery("")
-                        setDomainFilter("all")
-                      }}
-                    >
-                      Clear Filters
-                    </Button>
-                  )}
-                </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </DashboardLayout>
   )

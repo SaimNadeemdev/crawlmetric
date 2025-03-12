@@ -1,5 +1,17 @@
 import { NextResponse } from "next/server"
-import { getRequestData } from "@/lib/dataforseo"
+
+// Gemini API key
+const GEMINI_API_KEY = "AIzaSyCe7hCGyC2kCFWC7Nia8RDSaCov4hQOBLk";
+
+// Define the interface for grammar error
+interface GrammarError {
+  id: string;
+  offset: number;
+  length: number;
+  description: string;
+  suggestions: string[];
+  type: string;
+}
 
 export async function POST(request: Request) {
   try {
@@ -9,41 +21,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: "Text is required" }, { status: 400 })
     }
 
-    // Prepare request data for DataForSEO
-    const requestData = [
-      {
-        text,
-        language_code: language_code || "en-US",
-      },
-    ]
+    console.log("[SERVER] Checking grammar with Gemini API")
 
-    console.log("[SERVER] Sending request to DataForSEO Grammar Check API:", JSON.stringify(requestData))
+    try {
+      // Get grammar errors from Gemini
+      const errors = await checkGrammarWithGemini(text, language_code || "en-US");
+      
+      // Format the response
+      const formattedResponse = {
+        success: true,
+        originalText: text,
+        errors: errors,
+      }
 
-    // Send request to DataForSEO - Using the correct endpoint from documentation
-    const response = await getRequestData("content_generation/check_grammar/live", requestData)
-
-    console.log("[SERVER] DataForSEO API response:", JSON.stringify(response))
-
-    // Check if response is valid
-    if (!response || !response.tasks || !response.tasks[0] || !response.tasks[0].result) {
-      return NextResponse.json({ success: false, error: "Invalid response from DataForSEO" }, { status: 500 })
+      return NextResponse.json(formattedResponse)
+    } catch (error) {
+      console.error("[SERVER] Gemini API error:", error)
+      return NextResponse.json({ 
+        success: false, 
+        error: error instanceof Error ? error.message : "Failed to check grammar" 
+      }, { status: 500 })
     }
-
-    // Extract grammar check results
-    const result = response.tasks[0].result[0]
-
-    if (!result) {
-      return NextResponse.json({ success: false, error: "No results returned from DataForSEO" }, { status: 500 })
-    }
-
-    // Format the response
-    const formattedResponse = {
-      success: true,
-      originalText: result.initial_text || text,
-      errors: result.items || [],
-    }
-
-    return NextResponse.json(formattedResponse)
   } catch (error) {
     console.error("[SERVER] Error in check-grammar API route:", error)
     return NextResponse.json(
@@ -56,3 +54,89 @@ export async function POST(request: Request) {
   }
 }
 
+// Function to check grammar using Google's Gemini API
+async function checkGrammarWithGemini(text: string, languageCode: string): Promise<GrammarError[]> {
+  try {
+    // Prepare the request to Gemini API
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: `Check the following text for grammar, spelling, and punctuation errors. 
+                For each error found, provide:
+                1. The error text
+                2. The position (offset) of the error in the text
+                3. The length of the error text
+                4. A description of the error
+                5. Suggestions for correction
+                6. The type of error (grammar, spelling, punctuation, style)
+                
+                Return ONLY a JSON array of errors with these fields: id, offset, length, description, suggestions (array), and type.
+                If there are no errors, return an empty array.
+                
+                Language: ${languageCode}
+                
+                Text to check:
+                "${text}"`
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 4096,
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    // Extract the grammar check results from the response
+    if (data.candidates && data.candidates.length > 0 && 
+        data.candidates[0].content && 
+        data.candidates[0].content.parts && 
+        data.candidates[0].content.parts.length > 0) {
+      
+      const responseText = data.candidates[0].content.parts[0].text;
+      
+      // Extract JSON from the response text
+      const jsonMatch = responseText.match(/\[[\s\S]*\]/);
+      if (jsonMatch) {
+        try {
+          const errors = JSON.parse(jsonMatch[0]);
+          
+          // Validate and format the errors
+          return errors.map((error: any, index: number) => ({
+            id: error.id || `error-${index + 1}`,
+            offset: error.offset || 0,
+            length: error.length || 0,
+            description: error.description || "Unknown error",
+            suggestions: Array.isArray(error.suggestions) ? error.suggestions : [],
+            type: error.type || "grammar"
+          }));
+        } catch (error) {
+          console.error("Error parsing Gemini grammar check JSON:", error);
+          throw new Error("Failed to parse grammar check data");
+        }
+      } else {
+        // If no JSON array is found, assume no errors
+        return [];
+      }
+    } else {
+      throw new Error("Unexpected Gemini API response format");
+    }
+  } catch (error) {
+    console.error("Gemini API error:", error);
+    throw new Error("Failed to check grammar");
+  }
+}

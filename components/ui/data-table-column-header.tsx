@@ -1,11 +1,25 @@
 "use client"
 
 import { Column } from "@tanstack/react-table"
-import { ArrowUpDown, Info } from "lucide-react"
+import { ChevronsUpDown, ArrowUpDown, EyeOff, Info } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
-interface DataTableColumnHeaderProps<TData, TValue> {
+interface DataTableColumnHeaderProps<TData, TValue>
+  extends React.HTMLAttributes<HTMLDivElement> {
   column: Column<TData, TValue>
   title: string
   description?: string
@@ -15,30 +29,53 @@ export function DataTableColumnHeader<TData, TValue>({
   column,
   title,
   description,
+  className,
 }: DataTableColumnHeaderProps<TData, TValue>) {
+  if (!column.getCanSort()) {
+    return (
+      <div className={cn("flex items-center space-x-2", className)}>
+        <span className="text-xs font-medium">{title}</span>
+        {description && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-3 w-3 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="w-[200px] text-xs">{description}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </div>
+    )
+  }
+
   return (
-    <div className="flex items-center justify-center space-x-1">
+    <div className={cn("flex items-center justify-between space-x-2 px-1", className)}>
+      <div className="flex items-center">
+        <span className="text-xs font-medium whitespace-nowrap mr-2">{title}</span>
+        {description && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-3 w-3 text-muted-foreground" />
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="w-[200px] text-xs">{description}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+      </div>
       <Button
         variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        className="font-semibold"
+        size="sm"
+        className="-ml-3 h-6 w-6 p-0 data-[state=open]:bg-accent"
+        onClick={() => column.toggleSorting()}
       >
-        {title}
-        <ArrowUpDown className="ml-2 h-4 w-4" />
+        <ArrowUpDown className="h-3 w-3" />
       </Button>
-      
-      {description && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info className="h-4 w-4 text-muted-foreground" />
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs">
-              <p>{description}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )}
     </div>
   )
 }

@@ -1,83 +1,196 @@
+@import "../styles/apple-design.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Remove the problematic @import statement */
-
-body {
-  font-family: Arial, Helvetica, sans-serif;
+/* Import Auge font */
+@font-face {
+  font-family: 'Auge';
+  src: url('https://db.onlinewebfonts.com/t/3f4b2a2b480c3d4e0dd4d2dca169a6e3.woff2') format('woff2'),
+       url('https://db.onlinewebfonts.com/t/3f4b2a2b480c3d4e0dd4d2dca169a6e3.woff') format('woff');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
 }
 
-@layer base {
+@media (prefers-color-scheme: dark) {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
-    --radius: 1rem;
-
-    /* iPhone-inspired design tokens */
-    --ios-blur: 20px;
-    --ios-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
-    --ios-card-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
-    --ios-highlight: rgba(255, 255, 255, 0.1);
-    --ios-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    --ios-gradient-dark: linear-gradient(135deg, #2d3436 0%, #000000 100%);
-    --ios-transition: 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-    --ios-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-
-  .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
+/* Apply global fonts */
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+  font-family: 'Poppins', Arial, Helvetica, sans-serif !important;
+}
+
+/* Apply Poppins to all text elements except specially marked ones */
+p, span, div, ul, ol, li, a, button, input, textarea, select, label, table, td, th {
+  font-family: 'Poppins', Arial, Helvetica, sans-serif !important;
+}
+
+/* Apply FS_Me font to all headings */
+h1:not([class*="pacifico"]), h2, h3, h4, h5, h6, 
+.heading, 
+.section-title, 
+.card-title {
+  font-family: 'FS Me', sans-serif !important;
+}
+
+/* Preserve logo font */
+.logo-text {
+  font-family: var(--font-lil-grotesk) !important;
+}
+
+/* Preserve animated hero heading font - highest priority */
+.hero-heading, 
+[class*="pacifico"], 
+.animated-hero-heading,
+div[style*="font-family: Pacifico"] {
+  font-family: var(--font-pacifico), "Pacifico", cursive !important;
+}
+
+/* Poppins font classes */
+.poppins-thin {
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 100 !important;
+  font-style: normal !important;
+}
+
+.poppins-extralight {
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 200 !important;
+  font-style: normal !important;
+}
+
+.poppins-light {
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 300 !important;
+  font-style: normal !important;
+}
+
+.poppins-regular {
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+}
+
+.poppins-medium {
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 500 !important;
+  font-style: normal !important;
+}
+
+.poppins-semibold {
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 600 !important;
+  font-style: normal !important;
+}
+
+.poppins-bold {
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 700 !important;
+  font-style: normal !important;
+}
+
+.poppins-extrabold {
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 800 !important;
+  font-style: normal !important;
+}
+
+.poppins-black {
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 900 !important;
+  font-style: normal !important;
+}
+
+.poppins-thin-italic {
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 100 !important;
+  font-style: italic !important;
+}
+
+.poppins-extralight-italic {
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 200 !important;
+  font-style: italic !important;
+}
+
+.poppins-light-italic {
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 300 !important;
+  font-style: italic !important;
+}
+
+.poppins-regular-italic {
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 400 !important;
+  font-style: italic !important;
+}
+
+.poppins-medium-italic {
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 500 !important;
+  font-style: italic !important;
+}
+
+.poppins-semibold-italic {
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 600 !important;
+  font-style: italic !important;
+}
+
+.poppins-bold-italic {
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 700 !important;
+  font-style: italic !important;
+}
+
+.poppins-extrabold-italic {
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 800 !important;
+  font-style: italic !important;
+}
+
+.poppins-black-italic {
+  font-family: "Poppins", sans-serif !important;
+  font-weight: 900 !important;
+  font-style: italic !important;
+}
+
+/* Add animation for gradient backgrounds */
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
   }
-  body {
-    @apply bg-background text-foreground;
+  50% {
+    background-position: 100% 50%;
   }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient-x {
+  animation: gradient 8s ease infinite;
+  background-size: 400% 400%;
 }
 
 /* iPhone-inspired component styles */
@@ -319,7 +432,271 @@ body {
 .stagger-5 { animation-delay: 0.5s; }
 .stagger-6 { animation-delay: 0.6s; }
 
-/* Add these custom styles at the end of your globals.css file */
+/* Add custom black and purple gradient theme */
+.keyword-research-gradient {
+  background: #000000;
+  position: relative;
+  overflow: hidden;
+}
+
+.keyword-research-gradient::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at center,
+    rgba(128, 90, 213, 0.15) 0%,
+    rgba(76, 29, 149, 0.1) 25%,
+    rgba(0, 0, 0, 0) 70%
+  );
+  z-index: 0;
+  animation: pulse 15s ease-in-out infinite alternate;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.gradient-text {
+  background: linear-gradient(to right, #a78bfa, #c084fc, #e879f9);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradientShift 8s ease infinite;
+  background-size: 200% auto;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.apple-card {
+  background: rgba(25, 25, 25, 0.85);
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.apple-card:hover {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+}
+
+.apple-input {
+  background: rgba(30, 30, 30, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: white;
+  transition: all 0.2s ease;
+  height: 40px;
+}
+
+.apple-input:focus {
+  border-color: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.25);
+}
+
+.apple-input:hover:not(:focus) {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.apple-select {
+  background: rgba(30, 30, 30, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: white;
+  transition: all 0.2s ease;
+  height: 40px;
+}
+
+.apple-select:focus {
+  border-color: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.25);
+}
+
+.apple-select:hover:not(:focus) {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.apple-button {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  height: 40px;
+}
+
+.apple-button:hover {
+  background: linear-gradient(135deg, #9f75ff 0%, #b467ff 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+}
+
+.apple-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.2);
+}
+
+.apple-button-secondary {
+  background: rgba(30, 30, 30, 0.8);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  height: 40px;
+}
+
+.apple-button-secondary:hover {
+  background: rgba(40, 40, 40, 0.8);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.apple-button-secondary:active {
+  background: rgba(50, 50, 50, 0.8);
+}
+
+/* Animation for floating elements */
+.floating {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+/* Table styles for keyword research */
+.keyword-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.keyword-table th {
+  background: rgba(20, 20, 20, 0.7);
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.keyword-table th:first-child {
+  border-top-left-radius: 8px;
+}
+
+.keyword-table th:last-child {
+  border-top-right-radius: 8px;
+}
+
+.keyword-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.keyword-table tr:hover td {
+  background: rgba(168, 85, 247, 0.05);
+}
+
+.keyword-table tr:last-child td:first-child {
+  border-bottom-left-radius: 8px;
+}
+
+.keyword-table tr:last-child td:last-child {
+  border-bottom-right-radius: 8px;
+}
+
+/* Badge styles */
+.keyword-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.keyword-badge-low {
+  background: rgba(34, 197, 94, 0.1);
+  color: rgb(34, 197, 94);
+}
+
+.keyword-badge-medium {
+  background: rgba(234, 179, 8, 0.1);
+  color: rgb(234, 179, 8);
+}
+
+.keyword-badge-high {
+  background: rgba(239, 68, 68, 0.1);
+  color: rgb(239, 68, 68);
+}
+
+/* Chart styles */
+.chart-container {
+  background: rgba(25, 25, 25, 0.7);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.5);
+}
 
 /* Black Mirror inspired glow effects */
 .text-glow {
@@ -328,25 +705,6 @@ body {
 
 .box-glow {
   box-shadow: 0 0 10px rgba(59, 130, 246, 0.3), 0 0 20px rgba(59, 130, 246, 0.2);
-}
-
-/* Custom scrollbar for the Black Mirror theme */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: #000000;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(59, 130, 246, 0.3);
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(59, 130, 246, 0.5);
 }
 
 /* Subtle scan lines effect */
@@ -404,4 +762,651 @@ body {
   background-clip: text;
   color: transparent;
   display: inline-block;
+}
+
+/* Keyword Research Styles */
+.keyword-research-gradient {
+  background: #000000;
+  position: relative;
+  overflow: hidden;
+}
+
+.keyword-research-gradient::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at center,
+    rgba(128, 90, 213, 0.15) 0%,
+    rgba(76, 29, 149, 0.1) 25%,
+    rgba(0, 0, 0, 0) 70%
+  );
+  z-index: 0;
+  animation: pulse 15s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  0% {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: rotate(180deg) scale(1.1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+    opacity: 0.5;
+  }
+}
+
+.gradient-text {
+  background: linear-gradient(to right, #a78bfa, #c084fc, #e879f9);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradientShift 8s ease infinite;
+  background-size: 200% auto;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.apple-card {
+  background: rgba(25, 25, 25, 0.85);
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.apple-card:hover {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+}
+
+.apple-input {
+  background: rgba(30, 30, 30, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: white;
+  transition: all 0.2s ease;
+  height: 40px;
+}
+
+.apple-input:focus {
+  border-color: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.25);
+}
+
+.apple-input:hover:not(:focus) {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.apple-select {
+  background: rgba(30, 30, 30, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: white;
+  transition: all 0.2s ease;
+  height: 40px;
+}
+
+.apple-select:focus {
+  border-color: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.25);
+}
+
+.apple-select:hover:not(:focus) {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.apple-button {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  height: 40px;
+}
+
+.apple-button:hover {
+  background: linear-gradient(135deg, #9f75ff 0%, #b467ff 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+}
+
+.apple-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.2);
+}
+
+.apple-button-secondary {
+  background: rgba(30, 30, 30, 0.8);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  height: 40px;
+}
+
+.apple-button-secondary:hover {
+  background: rgba(40, 40, 40, 0.8);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.apple-button-secondary:active {
+  background: rgba(50, 50, 50, 0.8);
+}
+
+/* Animation for floating elements */
+.floating {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+/* Table styles for keyword research */
+.keyword-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.keyword-table th {
+  background: rgba(20, 20, 20, 0.7);
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.keyword-table th:first-child {
+  border-top-left-radius: 8px;
+}
+
+.keyword-table th:last-child {
+  border-top-right-radius: 8px;
+}
+
+.keyword-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.keyword-table tr:hover td {
+  background: rgba(168, 85, 247, 0.05);
+}
+
+.keyword-table tr:last-child td:first-child {
+  border-bottom-left-radius: 8px;
+}
+
+.keyword-table tr:last-child td:last-child {
+  border-bottom-right-radius: 8px;
+}
+
+/* Badge styles */
+.keyword-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.keyword-badge-low {
+  background: rgba(34, 197, 94, 0.1);
+  color: rgb(34, 197, 94);
+}
+
+.keyword-badge-medium {
+  background: rgba(234, 179, 8, 0.1);
+  color: rgb(234, 179, 8);
+}
+
+.keyword-badge-high {
+  background: rgba(239, 68, 68, 0.1);
+  color: rgb(239, 68, 68);
+}
+
+/* Chart styles */
+.chart-container {
+  background: rgba(25, 25, 25, 0.7);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.5);
+}
+
+/* Black Mirror inspired glow effects */
+.text-glow {
+  text-shadow: 0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+.box-glow {
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3), 0 0 20px rgba(59, 130, 246, 0.2);
+}
+
+/* Subtle scan lines effect */
+.scanlines {
+  position: relative;
+}
+
+.scanlines::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(to bottom, transparent 0%, rgba(255, 255, 255, 0.05) 0.5%, transparent 1%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Subtle vignette effect */
+.vignette {
+  position: relative;
+}
+
+.vignette::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at center, transparent 60%, rgba(0, 0, 0, 0.8) 100%);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Add gradient animation for hero text */
+@keyframes gradientFlow {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animated-gradient-text {
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #ec4899, #3b82f6);
+  background-size: 300% 100%;
+  animation: gradientFlow 8s ease infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: inline-block;
+}
+
+/* Keyword Research Styles */
+.keyword-research-gradient {
+  background: #000000;
+  position: relative;
+  overflow: hidden;
+}
+
+.keyword-research-gradient::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at center,
+    rgba(128, 90, 213, 0.15) 0%,
+    rgba(76, 29, 149, 0.1) 25%,
+    rgba(0, 0, 0, 0) 70%
+  );
+  z-index: 0;
+  animation: pulse 15s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  0% {
+    transform: rotate(0deg) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: rotate(180deg) scale(1.1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+    opacity: 0.5;
+  }
+}
+
+.gradient-text {
+  background: linear-gradient(to right, #a78bfa, #c084fc, #e879f9);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: gradientShift 8s ease infinite;
+  background-size: 200% auto;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.apple-card {
+  background: rgba(25, 25, 25, 0.85);
+  border-radius: 16px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.apple-card:hover {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+}
+
+.apple-input {
+  background: rgba(30, 30, 30, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: white;
+  transition: all 0.2s ease;
+  height: 40px;
+}
+
+.apple-input:focus {
+  border-color: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.25);
+}
+
+.apple-input:hover:not(:focus) {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.apple-select {
+  background: rgba(30, 30, 30, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: white;
+  transition: all 0.2s ease;
+  height: 40px;
+}
+
+.apple-select:focus {
+  border-color: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.25);
+}
+
+.apple-select:hover:not(:focus) {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.apple-button {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  height: 40px;
+}
+
+.apple-button:hover {
+  background: linear-gradient(135deg, #9f75ff 0%, #b467ff 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
+}
+
+.apple-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(168, 85, 247, 0.2);
+}
+
+.apple-button-secondary {
+  background: rgba(30, 30, 30, 0.8);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  height: 40px;
+}
+
+.apple-button-secondary:hover {
+  background: rgba(40, 40, 40, 0.8);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.apple-button-secondary:active {
+  background: rgba(50, 50, 50, 0.8);
+}
+
+/* Animation for floating elements */
+.floating {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+/* Table styles for keyword research */
+.keyword-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.keyword-table th {
+  background: rgba(20, 20, 20, 0.7);
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 500;
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.keyword-table th:first-child {
+  border-top-left-radius: 8px;
+}
+
+.keyword-table th:last-child {
+  border-top-right-radius: 8px;
+}
+
+.keyword-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.keyword-table tr:hover td {
+  background: rgba(168, 85, 247, 0.05);
+}
+
+.keyword-table tr:last-child td:first-child {
+  border-bottom-left-radius: 8px;
+}
+
+.keyword-table tr:last-child td:last-child {
+  border-bottom-right-radius: 8px;
+}
+
+/* Badge styles */
+.keyword-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.keyword-badge-low {
+  background: rgba(34, 197, 94, 0.1);
+  color: rgb(34, 197, 94);
+}
+
+.keyword-badge-medium {
+  background: rgba(234, 179, 8, 0.1);
+  color: rgb(234, 179, 8);
+}
+
+.keyword-badge-high {
+  background: rgba(239, 68, 68, 0.1);
+  color: rgb(239, 68, 68);
+}
+
+/* Chart styles */
+.chart-container {
+  background: rgba(25, 25, 25, 0.7);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.5);
+}
+
+/* Black Mirror inspired glow effects */
+.text-glow {
+  text-shadow: 0 0 10px rgba(59, 130, 246, 0.5), 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+.box-glow {
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3), 0 0 20px rgba(59, 130, 246, 0.2);
+}
+
+/* Subtle scan lines effect */
+.scanlines {
+  position: relative;
+}
+
+.scanlines::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(to bottom, transparent 0%, rgba(255, 255, 255, 0.05) 0.5%, transparent 1%);
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Subtle vignette effect */
+.vignette {
+  position: relative;
+}
+
+.vignette::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at center, transparent 60%, rgba(0, 0, 0, 0.8) 100%);
+  pointer-events: none;
+  z-index: 5;
 }

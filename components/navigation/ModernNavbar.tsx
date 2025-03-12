@@ -1,14 +1,15 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion"
 import { useAuth } from "@/lib/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ModeToggle } from "@/components/mode-toggle"
-import { Home, Activity, Settings, LogOut, Menu, X, ChevronRight, BarChart } from "lucide-react"
+import { IOSLogo } from "../ui/ios-logo"
+import { Home, Activity, Settings, LogOut, Menu, X, ChevronRight, BarChart, Search } from "lucide-react"
 
 const publicMenuItems = [{ name: "Home", href: "/", icon: Home }]
 
@@ -24,155 +25,246 @@ export function ModernNavbar() {
   const [isScrolled, setIsScrolled] = useState(false)
   const pathname = usePathname()
   const { user, signOut } = useAuth()
+  const navRef = useRef<HTMLDivElement>(null)
+
+  // Spring animation for navbar height
+  const navHeight = useMotionValue(64)
+  const springNavHeight = useSpring(navHeight, { stiffness: 300, damping: 30 })
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20)
+      const scrolled = window.scrollY > 20
+      setIsScrolled(scrolled)
+      navHeight.set(scrolled ? 56 : 64) // Shrink navbar slightly on scroll
     }
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+  }, [navHeight])
 
-  const menuItems = user ? [...publicMenuItems, ...authenticatedMenuItems] : publicMenuItems
+  // Only show menu items when user is logged in
+  const menuItems = user ? [...publicMenuItems, ...authenticatedMenuItems] : []
 
   return (
-    <nav
+    <motion.nav
+      ref={navRef}
+      style={{ height: springNavHeight }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled ? "bg-black/95 backdrop-blur-sm" : "bg-black"
+        isScrolled 
+          ? "bg-white/80 backdrop-blur-md border-b border-[#e5e5e7]" 
+          : "bg-white"
       }`}
     >
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+      <div className="container mx-auto px-4 h-full">
+        <div className="flex items-center justify-between h-full">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <BarChart className="h-6 w-6 text-primary" />
-            <span className="font-bold text-xl text-white">CrawlMetrics</span>
-          </Link>
+          <motion.div
+            whileTap={{ scale: 0.98 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          >
+            <Link href="/">
+              <IOSLogo />
+            </Link>
+          </motion.div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-1">
+          <div className="hidden md:flex items-center space-x-6">
             {menuItems.map((item) => {
               const isActive = pathname === item.href
+              
               return (
-                <Link
+                <motion.div
                   key={item.href}
-                  href={item.href}
-                  className={`px-4 py-2 rounded-lg transition-all duration-200 group ${
-                    isActive ? "bg-white/10 text-white" : "text-gray-400 hover:bg-white/5 hover:text-white"
-                  }`}
+                  className="relative"
+                  whileHover={{ y: -1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
                 >
-                  <div className="flex items-center space-x-2">
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.name}</span>
-                  </div>
-                </Link>
+                  <Link
+                    href={item.href}
+                    className={`transition-all duration-200 group flex items-center space-x-1.5 ${
+                      isActive 
+                        ? "text-[#06c]" 
+                        : "text-[#1d1d1f] hover:text-[#06c]"
+                    }`}
+                  >
+                    <motion.div
+                      animate={{ 
+                        scale: isActive ? 1.1 : 1
+                      }}
+                      transition={{ 
+                        scale: { type: "spring", stiffness: 400, damping: 17 }
+                      }}
+                    >
+                      <item.icon className={`h-[18px] w-[18px] transition-all duration-200 ${
+                        isActive ? "text-[#06c]" : "text-[#1d1d1f] group-hover:text-[#06c]"
+                      }`} />
+                    </motion.div>
+                    <span className="text-sm font-medium">{item.name}</span>
+                  </Link>
+                  
+                  {/* Apple-style active indicator - subtle line */}
+                  {isActive && (
+                    <motion.div 
+                      layoutId="activeNavIndicator"
+                      className="absolute bottom-[-8px] left-0 right-0 mx-auto w-4 h-[2px] bg-[#06c] rounded-full"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                    />
+                  )}
+                </motion.div>
               )
             })}
           </div>
 
           {/* Right Section */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-5">
             <ModeToggle />
 
             {user ? (
-              <div className="hidden md:flex items-center space-x-4">
-                <Button variant="ghost" className="text-gray-400 hover:text-white" onClick={signOut}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Logout
-                </Button>
-                <Avatar className="h-8 w-8">
-                  <AvatarImage src="/placeholder-user.jpg" alt={user.email} />
-                  <AvatarFallback>{user.email ? user.email.charAt(0).toUpperCase() : "U"}</AvatarFallback>
-                </Avatar>
+              <div className="hidden md:flex items-center space-x-5">
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Button 
+                    variant="ghost" 
+                    className="text-[#1d1d1f] text-sm font-medium hover:text-[#06c] hover:bg-[#f5f5f7] rounded-full px-4 h-9"
+                    onClick={signOut}
+                  >
+                    <LogOut className="h-[18px] w-[18px] mr-2 text-[#1d1d1f]" />
+                    Logout
+                  </Button>
+                </motion.div>
+                
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Avatar className="h-9 w-9 ring-[1.5px] ring-[#e5e5e7] dark:ring-[#333333]">
+                    <AvatarImage src="/placeholder-user.jpg" alt={user.email} />
+                    <AvatarFallback className="bg-[#06c] text-white text-sm font-medium">
+                      {user.email ? user.email.charAt(0).toUpperCase() : "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </motion.div>
               </div>
             ) : (
-              <div className="hidden md:flex items-center space-x-4">
+              <div className="hidden md:flex items-center space-x-3">
                 <Link href="/login">
-                  <Button variant="ghost" className="text-gray-400 hover:text-white">
-                    Login
-                  </Button>
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button 
+                      className="bg-[#06c] hover:bg-[#0071e3] text-white text-sm font-medium rounded-full px-4 h-9 shadow-sm"
+                    >
+                      Login
+                    </Button>
+                  </motion.div>
                 </Link>
                 <Link href="/register">
-                  <Button className="bg-primary hover:bg-primary/90">Sign Up</Button>
+                  <motion.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button 
+                      className="bg-[#06c] hover:bg-[#0071e3] text-white text-sm font-medium rounded-full px-4 h-9 shadow-sm"
+                    >
+                      Sign Up
+                    </Button>
+                  </motion.div>
                 </Link>
               </div>
             )}
 
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className="md:hidden p-2 rounded-lg text-gray-400 hover:bg-white/5 hover:text-white"
-            >
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
+            {/* Mobile menu button */}
+            <div className="md:hidden">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsOpen(!isOpen)}
+                  className="w-8 h-8 rounded-full text-[#86868b] hover:text-[#06c] hover:bg-[#f5f5f7] dark:hover:bg-[#2a2a2a]"
+                >
+                  {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                </Button>
+              </motion.div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile menu */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-black border-t border-white/10"
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            className="md:hidden bg-white dark:bg-[#1a1a1a] border-t border-[#e5e5e7] dark:border-[#333333]"
           >
-            <div className="container mx-auto px-4 py-4">
-              <div className="space-y-1">
-                {menuItems.map((item) => {
-                  const isActive = pathname === item.href
-                  return (
+            <div className="px-6 py-5 space-y-3 max-w-7xl mx-auto">
+              {menuItems.map((item) => {
+                const isActive = pathname === item.href
+                return (
+                  <motion.div
+                    key={item.href}
+                    whileHover={{ x: 2 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
                     <Link
-                      key={item.href}
                       href={item.href}
-                      onClick={() => setIsOpen(false)}
-                      className={`flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 ${
-                        isActive ? "bg-white/10 text-white" : "text-gray-400 hover:bg-white/5 hover:text-white"
+                      className={`flex items-center justify-between p-3 ${
+                        isActive 
+                          ? "text-[#06c]" 
+                          : "text-[#1d1d1f] dark:text-white"
                       }`}
+                      onClick={() => setIsOpen(false)}
                     >
                       <div className="flex items-center space-x-3">
-                        <item.icon className="h-5 w-5" />
-                        <span>{item.name}</span>
+                        <item.icon className={`h-5 w-5 ${isActive ? "text-[#06c]" : "text-[#86868b]"}`} />
+                        <span className="font-medium">{item.name}</span>
                       </div>
-                      <ChevronRight className="h-4 w-4" />
+                      <ChevronRight className="h-4 w-4 text-[#86868b]" />
                     </Link>
-                  )
-                })}
-              </div>
-
+                  </motion.div>
+                )
+              })}
+              
               {user ? (
-                <div className="mt-6 pt-6 border-t border-white/10">
-                  <div className="flex items-center space-x-3 px-4 py-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src="/placeholder-user.jpg" alt={user.email} />
-                      <AvatarFallback>{user.email ? user.email.charAt(0).toUpperCase() : "U"}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="text-sm font-medium text-white">{user.email}</div>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    className="w-full mt-2 text-gray-400 hover:text-white"
+                <motion.div
+                  whileHover={{ x: 2 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <button
                     onClick={() => {
                       signOut()
                       setIsOpen(false)
                     }}
+                    className="flex items-center justify-between w-full p-3 text-[#1d1d1f] dark:text-white"
                   >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Logout
-                  </Button>
-                </div>
+                    <div className="flex items-center space-x-3">
+                      <LogOut className="h-5 w-5 text-[#86868b]" />
+                      <span className="font-medium">Logout</span>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-[#86868b]" />
+                  </button>
+                </motion.div>
               ) : (
-                <div className="mt-6 pt-6 border-t border-white/10 space-y-2">
+                <div className="pt-3 space-y-3">
                   <Link href="/login" onClick={() => setIsOpen(false)}>
-                    <Button variant="ghost" className="w-full text-gray-400 hover:text-white">
+                    <Button variant="outline" className="w-full rounded-full border-[#e5e5e7] dark:border-[#333333] text-[#1d1d1f] dark:text-white h-10">
                       Login
                     </Button>
                   </Link>
                   <Link href="/register" onClick={() => setIsOpen(false)}>
-                    <Button className="w-full bg-primary hover:bg-primary/90">Sign Up</Button>
+                    <Button className="w-full bg-[#06c] hover:bg-[#0071e3] text-white rounded-full h-10 shadow-sm">
+                      Sign Up
+                    </Button>
                   </Link>
                 </div>
               )}
@@ -180,7 +272,6 @@ export function ModernNavbar() {
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </motion.nav>
   )
 }
-

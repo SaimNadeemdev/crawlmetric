@@ -121,58 +121,61 @@ export function KeywordList({ keywords, onRemoveKeyword, onSelectKeyword, onRefr
   return (
     <div className="space-y-4">
       <div className="relative">
-        <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
         <Input
           placeholder="Search keywords..."
-          className="pl-8"
+          className="pl-9 bg-black/30 border-white/5 rounded-xl focus:border-purple-400 focus:ring-purple-400/20 transition-all duration-300"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
 
-      <ScrollArea className="h-[500px]">
+      <ScrollArea className="h-[500px] pr-4 apple-scrollbar">
         {filteredKeywords.length > 0 ? (
-          <div className="space-y-1">
-            {filteredKeywords.map((keyword) => {
+          <div className="space-y-2">
+            {filteredKeywords.map((keyword, index) => {
               // Skip rendering if keyword is invalid
-              if (!keyword || !keyword.id) return null
+              if (!keyword || !keyword.id) return null;
 
               return (
                 <div
                   key={keyword.id}
-                  className={`flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-muted ${
-                    selectedKeywordId === keyword.id ? "bg-muted" : ""
+                  className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all duration-300 hover:bg-white/5 animate-fade-in ${
+                    selectedKeywordId === keyword.id 
+                      ? "bg-gradient-to-r from-purple-500/10 to-blue-500/10 backdrop-blur-sm border border-purple-500/20 shadow-sm" 
+                      : "border border-transparent"
                   }`}
                   onClick={() => handleSelectKeyword(keyword)}
+                  style={{ animationDelay: `${index * 0.05}s` }}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate">{keyword.keyword || "Unnamed Keyword"}</p>
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p className="font-medium truncate text-white tracking-tight">{keyword.keyword || "Unnamed Keyword"}</p>
+                    <p className="text-xs text-gray-400 truncate">
                       {keyword.domain || "No domain"} • {keyword.location_name || "No location"}
                     </p>
                   </div>
                   <div className="flex items-center ml-2">
                     {keyword.current_rank ? (
                       <span
-                        className={`text-sm font-medium px-2 py-1 rounded ${
+                        className={`text-sm font-medium px-2.5 py-1 rounded-full transition-all duration-300 ${
                           keyword.previous_rank && keyword.current_rank < keyword.previous_rank
-                            ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
+                            ? "bg-green-500/10 text-green-400 border border-green-500/20"
                             : keyword.previous_rank && keyword.current_rank > keyword.previous_rank
-                              ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
-                              : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100"
+                              ? "bg-red-500/10 text-red-400 border border-red-500/20"
+                              : "bg-black/40 text-gray-300 border border-white/5"
                         }`}
                       >
                         {keyword.current_rank}
                       </span>
                     ) : (
-                      <span className="text-sm text-muted-foreground">N/A</span>
+                      <span className="text-sm text-gray-500">N/A</span>
                     )}
 
                     {onRefreshKeyword && (
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="ml-1 text-muted-foreground hover:text-primary"
+                        className="ml-1 text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 rounded-full transition-all duration-300 transform hover:scale-110"
                         onClick={(e) => handleRefreshKeyword(keyword.id, e)}
                         disabled={refreshingKeywords[keyword.id]}
                       >
@@ -191,40 +194,48 @@ export function KeywordList({ keywords, onRemoveKeyword, onSelectKeyword, onRefr
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="ml-1 text-muted-foreground hover:text-destructive"
+                          className="ml-1 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all duration-300 transform hover:scale-110"
                           onClick={(e) => handleDeleteClick(keyword.id, e)}
                         >
                           <Trash2 className="h-4 w-4" />
                           <span className="sr-only">Delete</span>
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent>
+                      <AlertDialogContent className="bg-gradient-to-br from-gray-900/95 to-black/95 backdrop-blur-xl border-white/10">
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Keyword</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete "{keyword.keyword}"? This action cannot be undone.
+                          <AlertDialogTitle className="text-white">Delete Keyword</AlertDialogTitle>
+                          <AlertDialogDescription className="text-gray-400">
+                            Are you sure you want to delete this keyword? This action cannot be undone.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleConfirmDelete}>Delete</AlertDialogAction>
+                          <AlertDialogCancel className="bg-black/50 text-white border border-white/10 hover:bg-black/70 transition-all duration-300">Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            className="bg-gradient-to-r from-red-500/20 to-red-600/20 text-red-400 border border-red-500/20 hover:bg-gradient-to-r hover:from-red-500/30 hover:to-red-600/30 transition-all duration-300"
+                            onClick={handleConfirmDelete}
+                          >
+                            Delete
+                          </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <p className="text-muted-foreground mb-2">No keywords found</p>
-            {searchQuery ? (
-              <Button variant="outline" onClick={() => setSearchQuery("")}>
-                Clear search
+          <div className="flex flex-col items-center justify-center p-8 text-center animate-fade-in">
+            <Search className="h-8 w-8 text-gray-400 mb-2 opacity-50" />
+            <p className="text-gray-400">No keywords found</p>
+            {searchQuery && (
+              <Button 
+                variant="outline" 
+                onClick={() => setSearchQuery("")}
+                className="mt-4 bg-gradient-to-r from-purple-500/10 to-blue-500/10 text-purple-300 border border-purple-500/20 hover:bg-gradient-to-r hover:from-purple-500/20 hover:to-blue-500/20 rounded-xl transition-all duration-300"
+              >
+                Clear Search
               </Button>
-            ) : (
-              <p className="text-sm text-muted-foreground">Add your first keyword to start tracking</p>
             )}
           </div>
         )}

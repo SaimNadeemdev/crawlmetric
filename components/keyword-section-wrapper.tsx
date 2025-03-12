@@ -44,26 +44,31 @@ export function KeywordSectionWrapper({ children }: KeywordSectionWrapperProps) 
 
   if (hasError) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] p-6 text-center">
-        <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
-        <h2 className="text-2xl font-bold mb-2">Something went wrong</h2>
-        <p className="text-muted-foreground mb-6">{errorInfo || "An unexpected error occurred"}</p>
-        <Button
-          onClick={() => {
-            setHasError(false)
-            setErrorInfo(null)
-          }}
-          className="mb-4"
-        >
-          Try again
-        </Button>
-        <Button variant="outline" onClick={() => window.location.reload()}>
-          Reload page
-        </Button>
+      <div className="flex flex-col items-center justify-center min-h-[400px] p-6 text-center bg-black/40 backdrop-blur-md border border-white/5 rounded-xl shadow-lg">
+        <AlertTriangle className="h-12 w-12 text-red-400 mb-4" />
+        <h2 className="text-2xl font-medium mb-2 text-white tracking-tight">Something went wrong</h2>
+        <p className="text-gray-400 mb-6 max-w-md">{errorInfo || "An unexpected error occurred"}</p>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button
+            onClick={() => {
+              setHasError(false)
+              setErrorInfo(null)
+            }}
+            className="rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 transition-all duration-300 shadow-lg hover:shadow-blue-500/20"
+          >
+            Try again
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={() => window.location.reload()}
+            className="rounded-xl border-white/5 bg-black/40 hover:bg-white/5 hover:text-white transition-all duration-300"
+          >
+            Reload page
+          </Button>
+        </div>
       </div>
     )
   }
 
   return <React.Fragment>{children}</React.Fragment>
 }
-

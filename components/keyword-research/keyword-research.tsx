@@ -3,42 +3,81 @@
 import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { AnimatePresence, motion } from "framer-motion"
+import { toast } from "sonner"
+import {
+  Search,
+  Download,
+  ArrowRight,
+  ChevronDown,
+  Info,
+  Calendar,
+  BarChart,
+  TrendingUp,
+} from "lucide-react"
+import { useKeywordResearch } from "@/contexts/keyword-research-context"
+import { DataTable } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
-import { AlertCircle, Download, Search, History, ChevronDown, ChevronUp, Clock, Trash2, RefreshCcw } from "lucide-react"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { useRouter } from "next/navigation"
-import { useKeywordResearch } from "@/contexts/keyword-research-context"
-import { formatNumber } from "@/lib/utils"
-import { isAuthenticated } from "@/lib/api"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { format } from "date-fns"
-import { Badge } from "@/components/ui/badge"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { KeywordResearchHistoryItem } from "./keyword-research-history-item"
-import type { KeywordResearchResults } from "@/types/keyword-research"
-import { DataTable } from "@/components/ui/data-table"
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import {
+  Alert,
+  AlertDescription,
+} from "@/components/ui/alert"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
+import { 
+  Download as DownloadIcon, 
+  Search as SearchIcon, 
+  RefreshCcw, 
+  History, 
+  ChevronDown as ChevronDownIcon, 
+  ChevronUp, 
+  AlertCircle, 
+  Trash2, 
+  ArrowLeft, 
+  Clock,
+  Users, 
+  Globe, 
+  LineChart, 
+  BarChart as BarChartIcon, 
+  Lightbulb, 
+  ChevronLeft, 
+  ChevronRight 
+} from "lucide-react"
+import { KeywordResearchResults } from "@/types/keyword-research"
 import { getColumns } from "./columns"
-import { Users, Globe, LineChart, BarChart, Lightbulb, ChevronLeft, ChevronRight } from "lucide-react"
+import { useToast } from "@/components/ui/use-toast"
+import { motion as motionFramer } from "framer-motion"
 
-type ResearchMode = "keyword_suggestions" | "keywords_for_site" | "historical_search_volume" | "keyword_ideas"
+type ResearchMode = "keyword_suggestions" | "keywords_for_site" | "historical_search_volume" | "keyword_ideas" | "keywords_for_categories" | "bulk_keyword_difficulty" | "keyword_trends" | "serp_competitors" | "search_intent"
 
 export default function KeywordResearch() {
-  const router = useRouter()
   const { 
     runKeywordResearch, 
     isLoading: contextLoading, 
@@ -49,30 +88,199 @@ export default function KeywordResearch() {
     isHistoryLoading
   } = useKeywordResearch()
 
-  // Form state
+  // Canvas reference for animated background
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [mounted, setMounted] = useState(false)
+
+  // Initialize animated background
+  useEffect(() => {
+    setMounted(true)
+    
+    if (!canvasRef.current) return
+    
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    
+    // Set canvas dimensions
+    const resizeCanvas = () => {
+      if (!canvas) return
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
+    }
+    
+    resizeCanvas()
+    window.addEventListener('resize', resizeCanvas)
+    
+    // Create dots
+    const dots: { x: number; y: number; radius: number; opacity: number; speed: number }[] = []
+    
+    for (let i = 0; i < 100; i++) {
+      dots.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        radius: Math.random() * 1.5 + 0.5,
+        opacity: Math.random() * 0.5 + 0.1,
+        speed: Math.random() * 0.2 + 0.1
+      })
+    }
+    
+    // Animation loop
+    let animationFrameId: number
+    
+    const animate = () => {
+      if (!ctx || !canvas) return
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      
+      // Draw dots
+      dots.forEach(dot => {
+        ctx.beginPath()
+        ctx.arc(dot.x, dot.y, dot.radius, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(0, 0, 0, ${dot.opacity * 0.3})`
+        ctx.fill()
+        
+        // Move dots
+        dot.y += dot.speed
+        
+        // Reset dots that go off screen
+        if (dot.y > canvas.height) {
+          dot.y = 0
+          dot.x = Math.random() * canvas.width
+        }
+      })
+      
+      animationFrameId = requestAnimationFrame(animate)
+    }
+    
+    animate()
+    
+    return () => {
+      window.removeEventListener('resize', resizeCanvas)
+      cancelAnimationFrame(animationFrameId)
+    }
+  }, [mounted])
+
+  // State for form inputs
   const [mode, setMode] = useState<ResearchMode>("keyword_suggestions")
-  const [keyword, setKeyword] = useState("")
-  const [locationName, setLocationName] = useState("United States")
-  const [languageName, setLanguageName] = useState("English")
-  const [limit, setLimit] = useState(10)
-  const [targetUrl, setTargetUrl] = useState("")
-
-  // Results state
-  const [results, setResults] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [timestamp, setTimestamp] = useState("")
-  const [searchFilter, setSearchFilter] = useState("")
+  const [keyword, setKeyword] = useState<string>("")
+  const [targetUrl, setTargetUrl] = useState<string>("")
+  const [locationName, setLocationName] = useState<string>("United States")
+  const [languageName, setLanguageName] = useState<string>("English")
+  const [limit, setLimit] = useState<number>(50)
+  const [searchFilter, setSearchFilter] = useState<string>("")
+  const [timestamp, setTimestamp] = useState<string>("")
   
-  // History state
-  const [showHistory, setShowHistory] = useState(false)
-  const [selectedHistoryItem, setSelectedHistoryItem] = useState<KeywordResearchResults | null>(null)
-  const [currentPage, setCurrentPage] = useState<number>(1)
-  const itemsPerPage = 6
-
+  // State for results
+  const [results, setResults] = useState<any[]>([])
+  
   // Add refs for scrolling
   const historyRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  const { toast } = useToast()
+
+  // Toggle history visibility
+  const toggleHistory = () => {
+    historyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  // Select a history item to view
+  const handleSelectHistoryItem = (item: KeywordResearchResults) => {
+    setResults(item.data || []);
+    setTimestamp(item.timestamp || new Date().toLocaleString());
+    setMode(item.mode as ResearchMode);
+    if (resultsRef.current) {
+      resultsRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // Export results to CSV
+  const handleExportCSV = () => {
+    if (results.length === 0) return;
+    
+    // Create CSV content
+    const headers = Object.keys(results[0]).filter(key => 
+      typeof results[0][key] !== 'object' && key !== 'keyword_properties'
+    );
+    
+    let csvContent = headers.join(',') + '\n';
+    
+    results.forEach(row => {
+      const values = headers.map(header => {
+        const value = row[header];
+        return typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value;
+      });
+      csvContent += values.join(',') + '\n';
+    });
+    
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `keyword_research_${mode}_${new Date().toISOString().slice(0,10)}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Validate form before submission
+  const isValid = () => {
+    if (mode === "keywords_for_site") {
+      return targetUrl.trim() !== "";
+    } else {
+      return keyword.trim() !== "";
+    }
+  };
+
+  // Handle form submission
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!isValid()) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    toast({
+      title: "Researching",
+      description: "Please wait while we process your request",
+      variant: "default",
+    });
+    
+    const params: any = {
+      mode,
+      locationName,
+      languageName,
+      limit
+    };
+    
+    if (mode === "keywords_for_site") {
+      params.targetUrl = targetUrl;
+    } else {
+      params.keyword = keyword;
+    }
+    
+    runKeywordResearch(params)
+      .then(() => {
+        if (resultsRef.current) {
+          resultsRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      })
+      .catch(err => {
+        toast({
+          title: "Error",
+          description: err.message || "An error occurred during research",
+          variant: "destructive",
+        });
+      });
+  };
 
   // Update results when contextResults changes
   useEffect(() => {
@@ -89,30 +297,17 @@ export default function KeywordResearch() {
         
         // If data is empty but we're in development, create mock data
         if (Array.isArray(contextResults.data) && contextResults.data.length === 0) {
-          console.log("[DEBUG] Empty data received, creating mock data for development");
+          console.log("[DEBUG] Empty data received from API");
           
-          // Create mock data for testing
-          const mockData = [
-            {
-              keyword: "netflix shows",
-              keyword_properties: { keyword_difficulty: 65 },
-              keyword_info: { search_volume: 12000, competition: 0.8, competition_level: "HIGH", cpc: 2.5 }
-            },
-            {
-              keyword: "netflix movies",
-              keyword_properties: { keyword_difficulty: 72 },
-              keyword_info: { search_volume: 18000, competition: 0.7, competition_level: "HIGH", cpc: 2.1 }
-            },
-            {
-              keyword: "netflix login",
-              keyword_properties: { keyword_difficulty: 45 },
-              keyword_info: { search_volume: 25000, competition: 0.5, competition_level: "MEDIUM", cpc: 1.8 }
-            }
-          ];
+          // Set empty results
+          setResults([]);
           
-          // Use the mock data
-          setResults(mockData);
-          console.log("[DEBUG] Created mock data with", mockData.length, "items");
+          // Display a message to the user
+          toast({
+            title: "No Keywords Found",
+            description: "No keywords were found for this website. Try another website or check your API credentials.",
+            variant: "destructive",
+          });
         } else {
           // Process the data directly - handle both array and object formats
           let processedData = [];
@@ -199,7 +394,7 @@ export default function KeywordResearch() {
       case "historical_search_volume":
         return "Historical Search Volume"
       case "bulk_keyword_difficulty":
-        return "Keyword Difficulty"
+        return "Bulk Keyword Difficulty"
       case "keyword_trends":
         return "Keyword Trends"
       case "serp_competitors":
@@ -263,34 +458,148 @@ export default function KeywordResearch() {
     return "Very Easy"
   }
 
+  // Get competition level based on competition score
+  const getCompetitionLevel = (score: number): string => {
+    if (score >= 0.8) return "Very High";
+    if (score >= 0.6) return "High";
+    if (score >= 0.4) return "Medium";
+    if (score >= 0.2) return "Low";
+    return "Very Low";
+  }
+
+  // Helper function to get month name
+  const getMonthName = (monthNumber: number): string => {
+    const monthNames = ["January", "February", "March", "April", "May", "June", 
+                         "July", "August", "September", "October", "November", "December"];
+    return monthNames[monthNumber - 1] || "";
+  };
+
   // Process results from API
   const processResults = (data: any[]): any[] => {
-    if (!data || !Array.isArray(data)) {
-      console.error("Expected array for processResults, got:", typeof data);
+    console.log("[DEBUG] Processing", data.length, "items");
+    
+    // If no data, return empty array
+    if (!data || data.length === 0) {
       return [];
     }
 
-    console.log("[DEBUG] Raw data in processResults:", JSON.stringify(data, null, 2));
-
-    // Try to extract items from nested structure if needed
-    let processedData = data;
-    
-    // Handle nested API response structure
-    if (data.length === 1 && data[0]?.tasks && Array.isArray(data[0].tasks)) {
-      processedData = data[0].tasks.flatMap((task: { result: any }) => {
-        if (task.result && Array.isArray(task.result)) {
-          return task.result;
-        } else if (task.result && task.result.items && Array.isArray(task.result.items)) {
-          return task.result.items;
+    // For historical search volume, expand the data to include one row per month
+    if (mode === "historical_search_volume" && data.length > 0) {
+      const expandedData: any[] = [];
+      
+      data.forEach(item => {
+        // Extract months from different possible locations in the data structure
+        let months = [];
+        if (item.months && Array.isArray(item.months)) {
+          months = item.months;
+        } else if (item.keyword_data && item.keyword_data.keyword_info && 
+                  item.keyword_data.keyword_info.monthly_searches && 
+                  Array.isArray(item.keyword_data.keyword_info.monthly_searches)) {
+          months = item.keyword_data.keyword_info.monthly_searches;
         }
-        return [];
+        
+        if (months.length > 0) {
+          // Sort months by year and month (newest first)
+          const sortedMonths = [...months].sort((a: any, b: any) => {
+            if (a.year !== b.year) return b.year - a.year;
+            return b.month - a.month;
+          });
+          
+          // Create one row per month
+          sortedMonths.forEach(month => {
+            // Copy all properties from the original item
+            const expandedItem = { ...item };
+            
+            // Add month-specific properties
+            expandedItem.search_volume = month.search_volume;
+            expandedItem.year = month.year;
+            expandedItem.month = month.month;
+            expandedItem.monthName = getMonthName(month.month);
+            expandedItem.yearMonth = `${month.year}-${month.month.toString().padStart(2, '0')}`;
+            
+            expandedData.push(expandedItem);
+          });
+        } else {
+          // If no months data, just add the item as is
+          expandedData.push(item);
+        }
       });
+      
+      console.log("[DEBUG] Expanded historical data:", expandedData.length, "rows");
+      if (expandedData.length > 0) {
+        console.log("[DEBUG] Sample row:", JSON.stringify(expandedData[0], null, 2));
+      }
+      
+      return expandedData;
     }
-
-    console.log("[DEBUG] Processed data after extraction:", processedData.length);
-
-    // Normalize data structure for consistency
-    processedData = processedData.map((item: any) => {
+    
+    // For keyword ideas, normalize the data structure
+    if (mode === "keyword_ideas" && data.length > 0) {
+      console.log("[DEBUG] Processing keyword ideas data");
+      
+      // Extract ideas from nested structure if needed
+      const normalizedData = data.map(item => {
+        // Create a normalized item with standard properties
+        const normalizedItem: any = {
+          keyword: item.keyword || "",
+          search_volume: 0,
+          cpc: 0,
+          competition: 0,
+          competition_level: "N/A",
+          difficulty: 0,
+          difficulty_level: "N/A",
+        };
+        
+        // Extract from item.keyword_data if it exists
+        if (item.keyword_data) {
+          // Get keyword info
+          if (item.keyword_data.keyword_info) {
+            const info = item.keyword_data.keyword_info;
+            normalizedItem.search_volume = info.search_volume || 0;
+            normalizedItem.cpc = info.cpc || 0;
+            normalizedItem.competition = info.competition_index || 0;
+          }
+          
+          // Get SEO difficulty info
+          if (item.keyword_data.keyword_properties && item.keyword_data.keyword_properties.serp_info) {
+            normalizedItem.difficulty = item.keyword_data.keyword_properties.serp_info.seo_difficulty || 0;
+          }
+        }
+        
+        // Get search volume directly if it exists
+        if (item.search_volume !== undefined) {
+          normalizedItem.search_volume = item.search_volume;
+        }
+        
+        // Get CPC directly if it exists
+        if (item.cpc !== undefined) {
+          normalizedItem.cpc = item.cpc;
+        }
+        
+        // Get competition directly if it exists
+        if (item.competition !== undefined) {
+          normalizedItem.competition = item.competition;
+        }
+        
+        // Set competition level based on competition value
+        normalizedItem.competition_level = getCompetitionLevel(normalizedItem.competition);
+        
+        // Set difficulty level based on difficulty value
+        normalizedItem.difficulty_level = getDifficultyLevel(normalizedItem.difficulty);
+        
+        return normalizedItem;
+      });
+      
+      console.log("[DEBUG] Normalized keyword ideas data:", normalizedData.length, "items");
+      if (normalizedData.length > 0) {
+        console.log("[DEBUG] Sample normalized item:", JSON.stringify(normalizedData[0], null, 2));
+      }
+      
+      return normalizedData;
+    }
+    
+    // For other modes, process as before
+    const processedData = data.map(item => {
       const normalizedItem = { ...item };
       
       // For Keywords for Site mode, ensure position is defined
@@ -385,117 +694,13 @@ export default function KeywordResearch() {
     );
   };
 
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    // Validate form based on mode
-    if (mode === "keyword_suggestions" || mode === "keyword_ideas" || mode === "historical_search_volume") {
-      if (!keyword) {
-        setError("Keyword is required")
-        return
-      }
-    } else if (mode === "keywords_for_site") {
-      if (!targetUrl) {
-        setError("Target URL is required")
-        return
-      }
-    }
-
-    setIsLoading(true)
-    setError("")
-
-    try {
-      // Prepare params based on mode
-      const params = {
-        mode,
-        locationName,
-        languageName,
-        limit,
-      } as any
-
-      // Add mode-specific params
-      if (mode === "keyword_suggestions" || mode === "keyword_ideas" || mode === "historical_search_volume") {
-        params.keyword = keyword
-      } else if (mode === "keywords_for_site") {
-        params.target = targetUrl
-      }
-
-      // For historical search volume, we need to pass keywords as an array
-      if (mode === "historical_search_volume") {
-        params.keywords = [keyword]
-      }
-
-      // Run the research
-      await runKeywordResearch(params)
-
-      // Set timestamp
-      setTimestamp(new Date().toLocaleString())
-    } catch (err: any) {
-      setError(err.message || "An error occurred during research")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // Format number with commas
-  const formatNumber = (num: number) => {
-    return num ? num.toLocaleString() : "0"
-  }
-
-  // Export results to CSV
-  const exportToCsv = () => {
-    if (!results.length) return
-
-    // Create CSV content based on mode
-    let csvContent = ""
-
-    switch (mode) {
-      case "keywords_for_site":
-        csvContent = "Keyword,Position,Search Volume,Traffic,Traffic Cost,CPC,URL\n"
-        csvContent += results
-          .map(
-            (item: any) =>
-              `"${item.keyword}",${item.position},${item.search_volume},${item.traffic},${item.traffic_cost},${item.cpc},"${item.url}"`,
-          )
-          .join("\n")
-        break
-
-      case "historical_search_volume":
-        // For historical data, we'll create a flattened CSV
-        csvContent = "Keyword,Year,Month,Search Volume\n"
-        results.forEach((item: any) => {
-          if (item.historical_data) {
-            item.historical_data.forEach((entry: any) => {
-              csvContent += `"${item.keyword}",${entry.year},${entry.month},${entry.search_volume}\n`
-            })
-          }
-        })
-        break
-
-      case "keyword_suggestions":
-      case "keyword_ideas":
-      default:
-        csvContent = "Keyword,Search Volume,CPC,Ad Competition,SEO Difficulty,Ad Competition Level\n"
-        csvContent += results
-          .map(
-            (item: any) =>
-              `"${item.keyword}",${item.search_volume},${item.cpc},${(item.competition || 0) * 100}%,"${item.difficulty_level}","${item.competition_level}"`,
-          )
-          .join("\n")
-    }
-
-    // Create and download the CSV file
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.setAttribute("href", url)
-    link.setAttribute("download", `${mode}_${new Date().toISOString().split("T")[0]}.csv`)
-    link.style.visibility = "hidden"
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
+  // Custom No Data component with iOS styling
+  const NoDataIndicator = ({ message = "No data" }: { message?: string }) => (
+    <div className="flex items-center justify-center py-2 px-3 rounded-full bg-white/90 border border-gray-100 text-gray-600 backdrop-blur-xl shadow-sm">
+      <Info className="h-4 w-4 mr-2 text-gray-400" />
+      <span className="text-sm font-medium">{message}</span>
+    </div>
+  );
 
   // Filter results based on search query
   const filteredResults = searchFilter
@@ -508,13 +713,14 @@ export default function KeywordResearch() {
       case "keywords_for_site":
         return (
           <div className="space-y-2">
-            <Label htmlFor="target-url">Target URL</Label>
+            <Label htmlFor="target-url" className="text-gray-700 font-medium">Target URL</Label>
             <Input
               id="target-url"
               placeholder="Enter website URL (e.g., example.com)"
               value={targetUrl}
               onChange={(e) => setTargetUrl(e.target.value)}
               required
+              className="apple-input"
             />
           </div>
         )
@@ -522,13 +728,14 @@ export default function KeywordResearch() {
       default:
         return (
           <div className="space-y-2">
-            <Label htmlFor="keyword">Keyword</Label>
+            <Label htmlFor="keyword" className="text-gray-700 font-medium">Keyword</Label>
             <Input
               id="keyword"
               placeholder="Enter a keyword"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               required
+              className="apple-input"
             />
           </div>
         )
@@ -537,45 +744,25 @@ export default function KeywordResearch() {
 
   // Render results based on mode
   const renderResults = () => {
-    if (isLoading || contextLoading) {
+    if (contextLoading) {
       return (
-        <div className="flex items-center justify-center h-[400px]">
-          <div className="flex flex-col items-center space-y-4">
-            <div className="relative w-16 h-16">
-              <div className="absolute inset-0 rounded-full border-4 border-gray-200 dark:border-gray-800 opacity-25"></div>
-              <div className="absolute inset-0 rounded-full border-4 border-t-transparent border-black dark:border-white animate-spin"></div>
-            </div>
-            <p className="text-lg font-medium animate-pulse">Running keyword research...</p>
+        <div className="flex flex-col items-center justify-center h-[400px]">
+          <div className="relative w-16 h-16 mb-4">
+            <div className="absolute inset-0 rounded-full border-4 border-purple-300/10 opacity-25"></div>
+            <div className="absolute inset-0 rounded-full border-4 border-t-transparent border-purple-500 animate-spin"></div>
           </div>
         </div>
       )
     }
 
-    if (error) {
+    if (results.length === 0) {
       return (
-        <Alert variant="destructive" className="mb-4 animate-slide-up">
-          <AlertCircle className="h-4 w-4 mr-2" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )
-    }
-
-    // Apply search filter if provided
-    const filteredResults = searchFilter
-      ? results.filter((result: any) => 
-          result.keyword && result.keyword.toLowerCase().includes(searchFilter.toLowerCase())
-        )
-      : results;
-
-    if (filteredResults.length === 0) {
-      return (
-        <div className="flex flex-col items-center justify-center h-[400px] text-center animate-fade-in">
-          <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-4">
-            <Search className="h-8 w-8 text-gray-400" />
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="floating">
+            <SearchIcon className="h-16 w-16 text-gray-400 mb-4" />
           </div>
-          <h3 className="text-lg font-medium">No results found</h3>
-          <p className="text-sm text-muted-foreground mt-2 max-w-md">
-            Try adjusting your search query or run a new research with different parameters
+          <p className="text-gray-500 text-center">
+            No results yet. Start by selecting a research mode and entering your keywords.
           </p>
         </div>
       )
@@ -627,469 +814,537 @@ export default function KeywordResearch() {
           </h3>
           <div className="flex items-center gap-2">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <SearchIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Filter keywords..."
                 value={searchFilter}
                 onChange={(e) => setSearchFilter(e.target.value)}
-                className="pl-9 ios-button border-0 w-[200px]"
+                className="pl-10 rounded-[22px] border-gray-100 bg-white/50 backdrop-blur-xl shadow-sm h-10 min-w-[250px] text-sm font-medium text-gray-800 focus:border-blue-300 focus:ring-blue-100"
               />
-              {searchFilter && (
-                <button 
-                  onClick={() => setSearchFilter("")}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground hover:text-foreground"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 6 6 18"></path>
-                    <path d="m6 6 12 12"></path>
-                  </svg>
-                </button>
-              )}
             </div>
             <Button
               variant="outline"
-              onClick={exportToCsv}
-              className="ios-button border-0"
+              onClick={handleExportCSV}
+              className="rounded-[22px] border-gray-100 bg-white/50 backdrop-blur-xl shadow-sm h-10 px-4 text-sm font-medium text-gray-800 hover:bg-white/70 transition-all"
             >
-              <Download className="h-4 w-4 mr-2" />
-              Export
+              <DownloadIcon className="mr-2 h-4 w-4 text-gray-600" />
+              Export CSV
             </Button>
           </div>
         </div>
 
-        <div className="ios-card overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="rounded-[22px] overflow-hidden border border-gray-100 shadow-sm bg-white/50 backdrop-blur-xl">
+          <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 250px)" }}>
             <DataTable 
               columns={getColumns(tableData, mode)} 
-              data={tableData} 
+              data={tableData}
             />
           </div>
+          
+          <style jsx global>{`
+            /* iOS-style table styling */
+            .data-table {
+              width: 100%;
+              border-collapse: separate;
+              border-spacing: 0;
+              table-layout: fixed;
+            }
+            
+            .data-table th {
+              background-color: rgba(255, 255, 255, 0.8);
+              backdrop-filter: blur(8px);
+              font-weight: 600;
+              color: #6b7280;
+              text-align: left;
+              padding: 8px 12px;
+              font-size: 0.8rem;
+              border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+              white-space: nowrap;
+              position: sticky;
+              top: 0;
+              z-index: 10;
+            }
+            
+            .data-table td {
+              padding: 8px 12px;
+              border-bottom: 1px solid rgba(229, 231, 235, 0.3);
+              transition: background-color 0.2s ease;
+              vertical-align: middle;
+              white-space: nowrap;
+            }
+            
+            .data-table tr:hover td {
+              background-color: rgba(249, 250, 251, 0.5);
+            }
+            
+            .data-table tr:last-child td {
+              border-bottom: none;
+            }
+            
+            /* Animated row appearance */
+            @keyframes fadeIn {
+              from { opacity: 0; transform: translateY(4px); }
+              to { opacity: 1; transform: translateY(0); }
+            }
+            
+            .data-table tbody tr {
+              animation: fadeIn 0.3s ease forwards;
+              animation-delay: calc(var(--row-index, 0) * 0.03s);
+              opacity: 0;
+            }
+            
+            /* iOS-style scrollbar */
+            .overflow-auto::-webkit-scrollbar {
+              width: 4px;
+              height: 4px;
+            }
+            
+            .overflow-auto::-webkit-scrollbar-track {
+              background: transparent;
+            }
+            
+            .overflow-auto::-webkit-scrollbar-thumb {
+              background: rgba(156, 163, 175, 0.3);
+              border-radius: 2px;
+            }
+            
+            .overflow-auto::-webkit-scrollbar-thumb:hover {
+              background: rgba(156, 163, 175, 0.5);
+            }
+            
+            /* Fix for table container */
+            .overflow-auto {
+              scrollbar-width: thin;
+              scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+            }
+            
+            /* iOS-style hover effects */
+            .data-table tr {
+              transition: transform 0.15s ease, box-shadow 0.15s ease;
+            }
+            
+            .data-table tr:hover {
+              transform: translateY(-1px);
+              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+              z-index: 1;
+              position: relative;
+            }
+            
+            /* Fix for table container */
+            .rounded-md.border {
+              border: none;
+              overflow: visible;
+            }
+            
+            /* Ensure the table container fills the available space */
+            .data-table-wrapper {
+              width: 100%;
+            }
+            
+            /* Fix column header spacing */
+            .data-table-column-header {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              padding: 0 4px;
+            }
+            
+            /* Ensure sort buttons don't overlap with text */
+            .data-table-column-header button {
+              margin-left: 8px;
+              flex-shrink: 0;
+            }
+            
+            /* Ensure column titles don't get cut off */
+            .data-table-column-header span {
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
+          `}</style>
         </div>
       </div>
     )
   }
 
-  // Helper functions for history display
+  // Function to get research mode display name
+  const getResearchModeName = (mode: string): string => {
+    switch (mode) {
+      case "keyword_suggestions":
+        return "Keyword Suggestions";
+      case "keywords_for_site":
+        return "Keywords for Site";
+      case "historical_search_volume":
+        return "Historical Search Volume";
+      case "keyword_ideas":
+        return "Keyword Ideas";
+      case "keywords_for_categories":
+        return "Keywords for Categories";
+      case "bulk_keyword_difficulty":
+        return "Bulk Keyword Difficulty";
+      case "keyword_trends":
+        return "Keyword Trends";
+      case "serp_competitors":
+        return "SERP Competitors";
+      case "search_intent":
+        return "Search Intent";
+      default:
+        return mode;
+    }
+  };
+
+  // Function to get query summary for history items
   const getQuerySummary = (result: KeywordResearchResults): string => {
     const params = result.queryParams || result.query_params;
-    if (!params) return "No query parameters";
-    
-    if (result.mode === "keywords_for_site") {
-      return params.target || "No URL specified";
+    if (!params) return "Unknown query";
+
+    if (result.mode === "keyword_suggestions" && params.keyword) {
+      return `"${params.keyword}"`;
+    } else if (result.mode === "keywords_for_site" && params.target) {
+      return `Site: ${params.target}`;
+    } else if (params.keyword) {
+      return `"${params.keyword}"`;
+    } else if (params.target) {
+      return `Site: ${params.target}`;
     }
-    
-    return params.keyword || "No keyword specified";
+
+    return "Unknown query";
   };
 
-  // Add function to handle history button click with scrolling
-  const handleHistoryToggle = () => {
-    setShowHistory(!showHistory);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+
+  // Function to handle deleting a history item
+  const handleDeleteHistory = (index: number) => {
+    // Create a new array without the item at the specified index
+    const newHistory = [...searchHistory];
+    newHistory.splice(index, 1);
     
-    // If opening history, scroll to it after a short delay to allow for rendering
-    if (!showHistory) {
-      setTimeout(() => {
-        historyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
-    }
+    // Save the updated history to localStorage
+    localStorage.setItem("keywordResearchHistory", JSON.stringify(newHistory));
+    
+    // Update the state in the parent context
+    // Note: We're not calling loadHistory here as it doesn't accept parameters
+    // Instead, we'll rely on the context to update its state
+    toast({
+      title: "History item deleted",
+      description: "The selected history item has been removed.",
+    });
   };
 
-  // Modify handleViewResults to scroll to results
-  const handleViewResults = (result: KeywordResearchResults) => {
-    // Set the current results to the selected history item
-    setResults(Array.isArray(result.data) ? result.data : []);
-    setMode(result.mode as ResearchMode);
-    
-    // Set the query parameters based on the history item
-    const params = result.queryParams || result.query_params;
-    if (params) {
-      if (params.keyword) setKeyword(params.keyword);
-      if (params.target) setTargetUrl(params.target);
-      if (params.locationName) setLocationName(params.locationName);
-      if (params.languageName) setLanguageName(params.languageName);
-      if (params.limit) setLimit(params.limit);
-    }
-    
-    // Hide history section
-    setShowHistory(false);
-    
-    // Scroll to results section
-    setTimeout(() => {
-      resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 100);
+  // Function to handle loading a history item
+  const handleLoadHistory = (result: KeywordResearchResults) => {
+    loadHistory([result, ...searchHistory]);
   };
 
-  // Handle CSV export
-  const handleDownloadCSV = () => {
-    exportToCsv();
-  };
+  // Load search history from local storage on component mount
+  useEffect(() => {
+    const savedHistory = localStorage.getItem("keywordResearchHistory");
+    if (savedHistory) {
+      try {
+        // We don't need to do anything here as the context already loads the history
+        console.log("History will be loaded by the context");
+      } catch (error) {
+        console.error("Error parsing search history:", error);
+      }
+    }
+  }, []);
 
   return (
-    <div className="container mx-auto px-4 py-8 space-y-8 relative">
-      {/* Background blobs for dynamic effect */}
-      <div className="blob" style={{ top: '10%', left: '5%' }}></div>
-      <div className="blob" style={{ bottom: '10%', right: '5%', background: 'radial-gradient(circle, rgba(236, 72, 153, 0.7), rgba(99, 102, 241, 0.7))' }}></div>
-
-      {/* Header */}
-      <div className="glass-card p-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-bold gradient-text">Keyword Research</h1>
-            <p className="text-zinc-500 dark:text-zinc-400 mt-1">
-              Discover high-performing keywords for your content strategy
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              onClick={handleHistoryToggle}
-              className="glass-button"
-            >
-              <History className="mr-2 h-4 w-4" />
-              {showHistory ? "Hide History" : "View History"}
-            </Button>
-            
-            <Button
-              variant="outline"
-              onClick={() => router.push("/dashboard/keyword-research/history")}
-              className="glass-button"
-            >
-              <Clock className="mr-2 h-4 w-4" />
-              History Page
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Research Form */}
-      <div className="gradient-border">
-        <div className="glass-card p-6">
-          <div className="space-y-6">
-            <h3 className="text-xl font-semibold">Research Parameters</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <Label htmlFor="mode" className="text-sm font-medium">Research Mode</Label>
-                <Select
-                  value={mode}
-                  onValueChange={(value) => setMode(value as ResearchMode)}
-                >
-                  <SelectTrigger className="glass-input">
-                    <SelectValue placeholder="Select mode" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="keyword_suggestions">Keyword Suggestions</SelectItem>
-                    <SelectItem value="keywords_for_site">Keywords for Site</SelectItem>
-                    <SelectItem value="historical_search_volume">Historical Search Volume</SelectItem>
-                    <SelectItem value="bulk_keyword_difficulty">Bulk Keyword Difficulty</SelectItem>
-                    <SelectItem value="keyword_ideas">Keyword Ideas</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-3">
-                <Label htmlFor="keyword" className="text-sm font-medium">
-                  {mode === "keywords_for_site" ? "Target URL" : "Keyword"}
-                </Label>
-                <Input
-                  id={mode === "keywords_for_site" ? "target_url" : "keyword"}
-                  value={mode === "keywords_for_site" ? targetUrl : keyword}
-                  onChange={(e) => {
-                    if (mode === "keywords_for_site") {
-                      setTargetUrl(e.target.value)
-                    } else {
-                      setKeyword(e.target.value)
-                    }
-                  }}
-                  placeholder={mode === "keywords_for_site" ? "Enter website URL" : "Enter keyword"}
-                  className="glass-input"
-                />
-              </div>
-
-              <div className="space-y-3">
-                <Label htmlFor="location" className="text-sm font-medium">Location</Label>
-                <Input
-                  id="location"
-                  value={locationName}
-                  onChange={(e) => setLocationName(e.target.value)}
-                  placeholder="Enter location"
-                  className="glass-input"
-                />
-              </div>
-
-              <div className="space-y-3">
-                <Label htmlFor="language" className="text-sm font-medium">Language</Label>
-                <Input
-                  id="language"
-                  value={languageName}
-                  onChange={(e) => setLanguageName(e.target.value)}
-                  placeholder="Enter language"
-                  className="glass-input"
-                />
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <Label htmlFor="limit" className="text-sm font-medium">Result Limit: {limit}</Label>
-                </div>
-                <Slider
-                  id="limit"
-                  min={5}
-                  max={100}
-                  step={5}
-                  value={[limit]}
-                  onValueChange={(value) => setLimit(value[0])}
-                  className="py-2"
-                />
-              </div>
-
-              <div className="flex items-end">
-                <Button 
-                  onClick={handleSubmit} 
-                  disabled={isLoading || (mode === "keywords_for_site" ? !targetUrl : !keyword)}
-                  className="glass-button w-full"
-                >
-                  {isLoading ? (
-                    <>
-                      <div className="pulse-loader">
-                        <div></div>
-                        <div></div>
-                        <div></div>
-                      </div>
-                      <span className="ml-2">Processing...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Search className="mr-2 h-4 w-4" />
-                      <span>Run Research</span>
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Results Panel */}
-      <div className="glass-card p-6" ref={resultsRef}>
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-semibold">Results</h2>
-            <div className="flex space-x-2">
-              {results.length > 0 && (
-                <Button
-                  variant="outline"
-                  onClick={handleDownloadCSV}
-                  className="glass-button"
-                  disabled={isLoading}
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  Download CSV
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {isLoading && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="pulse-loader mb-4">
-                <div></div>
-                <div></div>
-                <div></div>
-              </div>
-              <p className="text-zinc-500 dark:text-zinc-400 animate-pulse">Loading results...</p>
-            </div>
-          )}
-
-          {!isLoading && error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                {error}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {!isLoading && !error && results.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="floating">
-                <Search className="h-16 w-16 text-zinc-300 dark:text-zinc-600 mb-4" />
-              </div>
-              <p className="text-zinc-500 dark:text-zinc-400 text-center">
-                No results yet. Start by selecting a research mode and entering your keywords.
-              </p>
-            </div>
-          )}
-
-          {!isLoading && !error && results.length > 0 && (
-            <div>
-              {/* Results content based on mode */}
-              {renderResults()}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* History Panel (Conditional) */}
-      {showHistory && (
-        <div className="glass-card p-6" ref={historyRef}>
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-semibold">Recent Research</h3>
-            
-            <div className="flex space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => loadHistory()}
-                className="glass-button"
-                disabled={isHistoryLoading}
-              >
-                <RefreshCcw className="mr-2 h-4 w-4" />
-                Refresh
-              </Button>
-              
-              {searchHistory.length > 0 && (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    if (confirm("Are you sure you want to clear your search history?")) {
-                      clearHistory()
-                    }
-                  }}
-                  className="glass-button text-red-500 hover:text-red-600"
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Clear
-                </Button>
-              )}
-            </div>
-          </div>
+    <div className="relative bg-white">
+      <canvas ref={canvasRef} className="fixed inset-0 h-full w-full opacity-50 pointer-events-none" />
+      {/* Main content with responsive width */}
+      <div className="relative z-10 pr-6 py-6">
+        <motionFramer.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="mb-8"
+        >
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">
+            <span className="bg-gradient-to-r from-blue-600 to-blue-300 bg-clip-text text-transparent">Keyword Research</span>
+          </h1>
+          <p className="text-gray-500 text-lg">Discover high-value keywords and analyze search trends to optimize your content strategy.</p>
           
-          {isHistoryLoading ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="pulse-loader mb-4">
-                <div></div>
-                <div></div>
-                <div></div>
-              </div>
-              <p className="text-zinc-500 dark:text-zinc-400 animate-pulse">Loading history...</p>
-            </div>
-          ) : searchHistory.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="floating">
-                <History className="h-16 w-16 text-zinc-300 dark:text-zinc-600 mb-4" />
-              </div>
-              <p className="text-zinc-500 dark:text-zinc-400 text-center">
-                No search history yet. Run some keyword research to get started.
-              </p>
-            </div>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {searchHistory.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((result, index) => {
-                  return (
-                    <div key={index} className="group relative">
-                      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-2xl blur-xl opacity-0 group-hover:opacity-70 transition-opacity duration-300"></div>
-                      <div className="relative overflow-hidden rounded-2xl bg-white/5 backdrop-blur-lg border border-white/10 shadow-sm transition-all duration-300 group-hover:shadow-lg group-hover:translate-y-[-2px] group-hover:border-white/20">
-                        <div className="p-5">
-                          <div className="flex items-center gap-3 mb-3">
-                            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-blue-500 dark:text-blue-400">
-                              {result.mode === "keyword_suggestions" && <Users className="h-5 w-5" />}
-                              {result.mode === "keywords_for_site" && <Globe className="h-5 w-5" />}
-                              {result.mode === "historical_search_volume" && <LineChart className="h-5 w-5" />}
-                              {result.mode === "bulk_keyword_difficulty" && <BarChart className="h-5 w-5" />}
-                              {result.mode === "keyword_ideas" && <Lightbulb className="h-5 w-5" />}
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-sm text-zinc-900 dark:text-zinc-100">{getTitleForMode(result.mode)}</h4>
-                              <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                                {result.created_at ? format(new Date(result.created_at), 'MMM d, yyyy • h:mm a') : 
-                                result.timestamp ? format(new Date(result.timestamp), 'MMM d, yyyy • h:mm a') : 'Unknown date'}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                              <p className="text-sm text-zinc-700 dark:text-zinc-300 truncate">
-                                {getQuerySummary(result)}
-                              </p>
-                            </div>
-                            
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                              <p className="text-sm text-zinc-700 dark:text-zinc-300">
-                                {result.data && Array.isArray(result.data) ? `${result.data.length} results` : 'Results available'}
-                              </p>
-                            </div>
-                          </div>
-                          
-                          <div className="mt-4 pt-3 border-t border-zinc-100/10">
-                            <Button 
-                              variant="ghost" 
-                              onClick={() => handleViewResults(result)}
-                              className="w-full justify-between text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50/10"
-                            >
-                              <span>View Results</span>
-                              <ChevronRight className="h-4 w-4 ml-1" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              
-              {/* Pagination Controls */}
-              {searchHistory.length > itemsPerPage && (
-                <div className="flex justify-center mt-8">
-                  <div className="inline-flex rounded-lg bg-white/5 backdrop-blur-md border border-white/10 p-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                      disabled={currentPage === 1}
-                      className="rounded-md text-zinc-700 dark:text-zinc-300 disabled:opacity-30"
+          {/* Gradient line */}
+          <div className="h-1 w-24 bg-gradient-to-r from-blue-600 to-blue-300 rounded-full mt-4 mb-8"></div>
+        </motionFramer.div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left column: Form */}
+          <div className="lg:col-span-1">
+            <motionFramer.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+            >
+              <Card className="overflow-hidden border border-gray-100 bg-white/80 backdrop-blur-xl shadow-sm rounded-2xl">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-xl font-medium">Research Options</CardTitle>
+                  <CardDescription>Configure your keyword research parameters</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Research Mode */}
+                  <div className="space-y-2">
+                    <Label htmlFor="mode" className="text-gray-700 font-medium">Research Mode</Label>
+                    <Select 
+                      value={mode} 
+                      onValueChange={(value) => setMode(value as ResearchMode)}
                     >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    
-                    {Array.from({ length: Math.min(5, Math.ceil(searchHistory.length / itemsPerPage)) }, (_, i) => {
-                      const pageNumber = i + 1;
-                      return (
-                        <Button
-                          key={i}
-                          variant={currentPage === pageNumber ? "default" : "ghost"}
-                          size="sm"
-                          onClick={() => setCurrentPage(pageNumber)}
-                          className={`rounded-md min-w-9 ${
-                            currentPage === pageNumber 
-                              ? "bg-blue-500/10 text-blue-600 dark:text-blue-400" 
-                              : "text-zinc-700 dark:text-zinc-300"
-                          }`}
-                        >
-                          {pageNumber}
-                        </Button>
-                      );
-                    })}
-                    
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(searchHistory.length / itemsPerPage)))}
-                      disabled={currentPage === Math.ceil(searchHistory.length / itemsPerPage)}
-                      className="rounded-md text-zinc-700 dark:text-zinc-300 disabled:opacity-30"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
+                      <SelectTrigger id="mode" className="w-full rounded-xl border-gray-200 bg-white text-gray-900 h-11">
+                        <SelectValue placeholder="Select research mode" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-gray-100 shadow-lg bg-white">
+                        <SelectItem value="keyword_suggestions" className="rounded-lg hover:bg-gray-50 text-gray-900">Keyword Suggestions</SelectItem>
+                        <SelectItem value="keywords_for_site" className="rounded-lg hover:bg-gray-50 text-gray-900">Keywords for Site</SelectItem>
+                        <SelectItem value="historical_search_volume" className="rounded-lg hover:bg-gray-50 text-gray-900">Historical Search Volume</SelectItem>
+                        <SelectItem value="keyword_ideas" className="rounded-lg hover:bg-gray-50 text-gray-900">Keyword Ideas</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                </div>
-              )}
-            </>
-          )}
+
+                  {/* Keyword Input */}
+                  {mode !== "keywords_for_site" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="keyword" className="text-gray-700 font-medium">Keyword</Label>
+                      <Input
+                        id="keyword"
+                        placeholder="Enter a keyword"
+                        value={keyword}
+                        onChange={(e) => setKeyword(e.target.value)}
+                        required
+                        className="rounded-xl border-gray-200 bg-white text-gray-900 h-11"
+                      />
+                    </div>
+                  )}
+
+                  {/* URL Input for Keywords for Site */}
+                  {mode === "keywords_for_site" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="targetUrl" className="text-gray-700 font-medium">Target Website</Label>
+                      <Input
+                        id="targetUrl"
+                        placeholder="Enter website URL (e.g., example.com)"
+                        value={targetUrl}
+                        onChange={(e) => setTargetUrl(e.target.value)}
+                        required
+                        className="rounded-xl border-gray-200 bg-white text-gray-900 h-11"
+                      />
+                    </div>
+                  )}
+
+                  {/* Location */}
+                  <div className="space-y-2">
+                    <Label htmlFor="location" className="text-gray-700 font-medium">Location</Label>
+                    <Select 
+                      value={locationName} 
+                      onValueChange={setLocationName}
+                    >
+                      <SelectTrigger id="location" className="w-full rounded-xl border-gray-200 bg-white text-gray-900 h-11">
+                        <SelectValue placeholder="Select location" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-gray-100 shadow-lg bg-white">
+                        <SelectItem value="United States" className="rounded-lg hover:bg-gray-50 text-gray-900">United States</SelectItem>
+                        <SelectItem value="United Kingdom" className="rounded-lg hover:bg-gray-50 text-gray-900">United Kingdom</SelectItem>
+                        <SelectItem value="Canada" className="rounded-lg hover:bg-gray-50 text-gray-900">Canada</SelectItem>
+                        <SelectItem value="Australia" className="rounded-lg hover:bg-gray-50 text-gray-900">Australia</SelectItem>
+                        <SelectItem value="Global" className="rounded-lg hover:bg-gray-50 text-gray-900">Global</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Language */}
+                  <div className="space-y-2">
+                    <Label htmlFor="language" className="text-gray-700 font-medium">Language</Label>
+                    <Select 
+                      value={languageName} 
+                      onValueChange={setLanguageName}
+                    >
+                      <SelectTrigger id="language" className="w-full rounded-xl border-gray-200 bg-white text-gray-900 h-11">
+                        <SelectValue placeholder="Select language" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-gray-100 shadow-lg bg-white">
+                        <SelectItem value="English" className="rounded-lg hover:bg-gray-50 text-gray-900">English</SelectItem>
+                        <SelectItem value="Spanish" className="rounded-lg hover:bg-gray-50 text-gray-900">Spanish</SelectItem>
+                        <SelectItem value="French" className="rounded-lg hover:bg-gray-50 text-gray-900">French</SelectItem>
+                        <SelectItem value="German" className="rounded-lg hover:bg-gray-50 text-gray-900">German</SelectItem>
+                        <SelectItem value="Japanese" className="rounded-lg hover:bg-gray-50 text-gray-900">Japanese</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Result Limit */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <Label htmlFor="limit" className="text-gray-700 font-medium">Result Limit: {limit}</Label>
+                    </div>
+                    <Slider
+                      id="limit"
+                      min={5}
+                      max={100}
+                      step={5}
+                      value={[limit]}
+                      onValueChange={(value) => setLimit(value[0])}
+                      className="py-4"
+                    />
+                  </div>
+
+                  {/* Submit Button */}
+                  <motionFramer.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="pt-2"
+                  >
+                    <Button 
+                      onClick={handleSubmit} 
+                      disabled={contextLoading || !isValid()}
+                      className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-blue-300 hover:from-blue-700 hover:to-blue-400 text-white font-medium shadow-sm transition-all hover:shadow-md"
+                    >
+                      {(contextLoading) ? (
+                        <div className="flex items-center">
+                          <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
+                          Researching...
+                        </div>
+                      ) : (
+                        <div className="flex items-center">
+                          <SearchIcon className="mr-2 h-4 w-4" />
+                          Run Research
+                        </div>
+                      )}
+                    </Button>
+                  </motionFramer.div>
+
+                  {/* History Toggle Button */}
+                  <motionFramer.div
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowHistoryModal(true)}
+                      className="w-full h-11 rounded-xl border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                    >
+                      <History className="mr-2 h-4 w-4" />
+                      View Search History
+                    </Button>
+                  </motionFramer.div>
+                </CardContent>
+              </Card>
+            </motionFramer.div>
+
+            {/* History Section */}
+            {showHistoryModal && (
+              <Dialog open={showHistoryModal} onOpenChange={setShowHistoryModal}>
+                <DialogContent className="sm:max-w-[600px] rounded-[22px] border-gray-100 bg-white/90 backdrop-blur-xl p-0 overflow-hidden">
+                  <div className="bg-gradient-to-r from-blue-600 to-blue-400 p-6">
+                    <DialogTitle className="text-xl font-semibold text-white mb-2">Search History</DialogTitle>
+                    <DialogDescription className="text-blue-100">
+                      View and reuse your previous keyword research queries
+                    </DialogDescription>
+                  </div>
+                  
+                  <div className="p-6 max-h-[60vh] overflow-y-auto">
+                    {isHistoryLoading ? (
+                      <div className="flex flex-col items-center justify-center py-8">
+                        <div className="h-10 w-10 rounded-full border-2 border-blue-500/20 border-t-blue-500 animate-spin mb-4"></div>
+                        <p className="text-gray-500">Loading history...</p>
+                      </div>
+                    ) : searchHistory.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-8">
+                        <History className="h-16 w-16 text-gray-300 mb-4" />
+                        <p className="text-gray-500 text-center">No search history yet</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {searchHistory.map((result, index) => (
+                          <motionFramer.div
+                            key={index}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.05 }}
+                            className="group"
+                          >
+                            <Card className="overflow-hidden border border-gray-100 rounded-[18px] shadow-sm hover:shadow-md transition-all duration-300 bg-white/80 backdrop-blur-sm">
+                              <CardContent className="p-4">
+                                <div className="flex justify-between items-start">
+                                  <div>
+                                    <h4 className="font-medium text-gray-900">{getResearchModeName(result.mode)}</h4>
+                                    <p className="text-sm text-gray-500 mt-1">
+                                      {getQuerySummary(result)}
+                                    </p>
+                                    <div className="flex items-center mt-2 space-x-2">
+                                      <Badge variant="outline" className="text-xs bg-blue-50 text-blue-600 border-blue-100">
+                                        {(result.data?.length || 0)} results
+                                      </Badge>
+                                      <Badge variant="outline" className="text-xs bg-gray-50 text-gray-600 border-gray-100">
+                                        {new Date(result.timestamp).toLocaleDateString()}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                  <div className="flex space-x-2">
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => handleDeleteHistory(index)}
+                                      className="text-red-500 hover:text-red-600 hover:bg-red-50 rounded-full h-8 w-8 p-0"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      onClick={() => {
+                                        handleSelectHistoryItem(result);
+                                        setShowHistoryModal(false);
+                                      }}
+                                      className="bg-blue-500 hover:bg-blue-600 text-white rounded-full h-8 w-8 p-0"
+                                    >
+                                      <ArrowRight className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </motionFramer.div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="border-t border-gray-100 p-4 bg-gray-50/80 backdrop-blur-sm flex justify-end">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowHistoryModal(false)}
+                      className="rounded-full px-4 border-gray-200 text-gray-700 hover:bg-gray-100"
+                    >
+                      Close
+                    </Button>
+                    {searchHistory.length > 0 && (
+                      <Button 
+                        variant="destructive" 
+                        onClick={clearHistory}
+                        className="rounded-full px-4 ml-2 bg-red-500 hover:bg-red-600 text-white"
+                      >
+                        Clear All
+                      </Button>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
+
+          {/* Right column: Results */}
+          <div className="lg:col-span-2">
+            <motionFramer.div
+              ref={resultsRef}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+            >
+              {renderResults()}
+            </motionFramer.div>
+          </div>
         </div>
-      )}
+      </div>
     </div>
-  );
+  )
 }

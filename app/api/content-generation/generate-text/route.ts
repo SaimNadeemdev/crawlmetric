@@ -1,99 +1,42 @@
 import { NextResponse } from "next/server"
 
+// Gemini API key
+const GEMINI_API_KEY = "AIzaSyCe7hCGyC2kCFWC7Nia8RDSaCov4hQOBLk";
+
 export async function POST(request: Request) {
   try {
-    // Get DataForSEO credentials from environment variables
-    const username = process.env.DATAFORSEO_USERNAME
-    const password = process.env.DATAFORSEO_PASSWORD
-
-    if (!username || !password) {
-      return NextResponse.json({ error: "API credentials not configured" }, { status: 500 })
-    }
-
     // Parse request body
     const body = await request.json()
-    const { text, topic = "", description = "", creativity_index = 3, target_words_count = 500 } = body
+    const { text, description = "", creativity_index = 3, target_words_count = 500 } = body
 
     if (!text) {
       return NextResponse.json({ error: "Text is required" }, { status: 400 })
     }
 
-    // Prepare request data for DataForSEO API
-    const requestData = [
-      {
-        topic: topic || text,
-        description: description ? description : "No Description", // Send "No Description" if empty
-        creativity_index: creativity_index / 5, // Convert from 1-5 scale to 0-1 scale
-        word_count: target_words_count,
-        include_conclusion: true,
-      },
-    ]
+    console.log("Generating text with Gemini API")
 
-    console.log("Sending request to DataForSEO:", JSON.stringify(requestData))
+    // Generate text using Gemini API
+    try {
+      const generatedText = await generateTextWithGemini(
+        text,
+        description,
+        creativity_index,
+        target_words_count
+      );
 
-    // Create Basic Auth header
-    const authHeader = Buffer.from(`${username}:${password}`).toString("base64")
-
-    // Make request to DataForSEO API
-    const response = await fetch("https://api.dataforseo.com/v3/content_generation/generate_text/live", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Basic ${authHeader}`,
-      },
-      body: JSON.stringify(requestData),
-    })
-
-    // Handle non-200 responses
-    if (!response.ok) {
-      const errorText = await response.text()
+      // Return successful response
+      return NextResponse.json({
+        result: [{ generated_text: generatedText }],
+      })
+    } catch (error) {
+      console.error("Error generating text with Gemini:", error)
       return NextResponse.json(
         {
-          error: `DataForSEO API error: ${response.status} ${errorText}`,
+          error: error instanceof Error ? error.message : "Failed to generate text",
         },
         { status: 500 },
       )
     }
-
-    // Parse response
-    const data = await response.json()
-
-    // Check for API-level errors
-    if (data.status_code !== 20000) {
-      return NextResponse.json(
-        {
-          error: data.status_message || "API error",
-        },
-        { status: 500 },
-      )
-    }
-
-    // Check for task-level errors
-    if (!data.tasks || !data.tasks[0] || data.tasks[0].status_code !== 20000) {
-      return NextResponse.json(
-        {
-          error: data.tasks?.[0]?.status_message || "Task processing error",
-        },
-        { status: 500 },
-      )
-    }
-
-    // Extract the generated text
-    const generatedText = data.tasks[0]?.result?.[0]?.generated_text
-
-    if (!generatedText) {
-      return NextResponse.json(
-        {
-          error: "No content was generated",
-        },
-        { status: 500 },
-      )
-    }
-
-    // Return successful response
-    return NextResponse.json({
-      result: [{ generated_text: generatedText }],
-    })
   } catch (error) {
     console.error("Error in generate-text API route:", error)
     return NextResponse.json(
@@ -105,3 +48,67 @@ export async function POST(request: Request) {
   }
 }
 
+// Function to generate text using Google's Gemini API
+async function generateTextWithGemini(
+  prompt: string,
+  description: string = "",
+  creativityIndex: number = 3,
+  targetWordCount: number = 500
+): Promise<string> {
+  try {
+    // Convert creativity index from 1-5 scale to temperature (0.1-1.0)
+    const temperature = 0.1 + (creativityIndex - 1) * 0.225;
+    
+    // Prepare the request to Gemini API
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: `Generate a well-structured article based on the following prompt: "${prompt}".
+                ${description ? `Additional context: ${description}` : ''}
+                
+                The article should:
+                - Be approximately ${targetWordCount} words
+                - Include an introduction, body paragraphs, and conclusion
+                - Be informative and engaging
+                - Use proper grammar and formatting
+                - Be written in a professional tone
+                
+                Please generate the article now, focusing only on the content without any explanations or meta-commentary.`
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: temperature,
+          maxOutputTokens: Math.min(4096, targetWordCount * 2), // Estimate tokens as roughly 2x word count
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    
+    // Extract the generated text from the response
+    if (data.candidates && data.candidates.length > 0 && 
+        data.candidates[0].content && 
+        data.candidates[0].content.parts && 
+        data.candidates[0].content.parts.length > 0) {
+      return data.candidates[0].content.parts[0].text;
+    } else {
+      throw new Error("Unexpected Gemini API response format");
+    }
+  } catch (error) {
+    console.error("Gemini API error:", error);
+    throw new Error("Failed to generate text");
+  }
+}

@@ -1,0 +1,57 @@
+/* Font overrides for consistency across the application */
+
+/* Ensure the animated heading uses Pacifico font */
+.animated-heading, .pacifico-text {
+  font-family: var(--font-pacifico), cursive !important;
+}
+
+/* Section headings use FS_Me font with consistent weight */
+.section-title, h1, h2, .gradient-title, [class*="gradient"] h1, [class*="gradient"] h2 {
+  font-family: var(--font-fs-me) !important;
+  font-weight: 700 !important;
+}
+
+/* Metrics banner heading specific styling to match other headings */
+.metrics-banner .gradient-title,
+.metrics-banner h2 {
+  font-family: var(--font-fs-me) !important;
+  font-weight: 700 !important;
+}
+
+/* Target GradientHeading component specifically */
+[class*="gradient"] h1,
+[class*="gradient"] h2,
+h1.text-4xl.font-extrabold.tracking-tight.lg\:text-5xl.bg-gradient-to-r {
+  font-family: var(--font-fs-me) !important;
+  font-weight: 700 !important;
+}
+
+/* Preserve animated hero heading font - highest priority */
+.hero-heading, 
+[class*="pacifico"], 
+.animated-hero-heading,
+.pacifico-text,
+div[style*="font-family: Pacifico"],
+.hero-animated-text,
+span.pacifico-text,
+motion.span.pacifico-text {
+  font-family: "Pacifico", cursive !important;
+}
+
+/* Override any other font settings for hero animated text */
+.pacifico-text * {
+  font-family: "Pacifico", cursive !important;
+}
+
+/* Additional override for any inline styles */
+[style*="font-family"][class*="pacifico"] {
+  font-family: "Pacifico", cursive !important;
+}
+
+/* Enforce Pacifico with higher specificity */
+body .hero-heading .pacifico-text,
+body [class*="pacifico"],
+body .hero-animated-text,
+body span.pacifico-text {
+  font-family: "Pacifico", cursive !important;
+}

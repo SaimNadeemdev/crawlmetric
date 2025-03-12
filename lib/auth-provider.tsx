@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react"
 import { createClient } from "@supabase/supabase-js"
 import type { Session, User } from "@supabase/supabase-js"
+import { usePathname, useRouter } from "next/navigation"
 
 // Use hardcoded Supabase credentials for client-side
 const supabaseUrl = 'https://nzxgnnpthtefahosnolm.supabase.co'
@@ -32,6 +33,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const pathname = usePathname()
+  const router = useRouter()
 
   // Initial session check
   useEffect(() => {
@@ -107,6 +110,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  // Handle auth state changes and redirect if needed
+  useEffect(() => {
+    // Check if user is logged out and on a protected route
+    if (!isLoading && !user && pathname && (
+      pathname.startsWith('/dashboard') || 
+      pathname.startsWith('/app') || 
+      pathname.startsWith('/settings')
+    )) {
+      console.log("User not authenticated but on protected route. Redirecting to home page.");
+      // Use replace to prevent back navigation to protected pages
+      window.location.replace('/');
+    }
+  }, [user, isLoading, pathname]);
+
   const signIn = async (email: string, password: string) => {
     try {
       console.log("Auth provider - Signing in with:", email)
@@ -174,8 +191,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await supabase.auth.signOut()
       localStorage.removeItem('supabase.auth.token')
+      
+      // Force redirect to home page after logout
+      window.location.replace('/');
     } catch (error) {
       console.error("Sign out error:", error)
+      // Even on error, try to redirect
+      window.location.replace('/');
     }
   }
 

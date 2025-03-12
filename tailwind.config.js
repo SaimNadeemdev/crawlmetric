@@ -10,6 +10,13 @@ const config = {
         "2xl": "1400px",
       },
     },
+    fontFamily: {
+      sans: ['Poppins', 'var(--font-poppins)', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+      fsme: ['FS Me', 'var(--font-fs-me)', 'sans-serif'],
+      poppins: ['Poppins', 'var(--font-poppins)', 'sans-serif'],
+      logo: ['var(--font-lil-grotesk)', 'sans-serif'],
+      hero: ['var(--font-pacifico)', 'cursive'],
+    },
     extend: {
       colors: {
         border: "hsl(var(--border))",
@@ -51,23 +58,41 @@ const config = {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
-      fontFamily: {
-        sans: ["var(--font-sans)"],
-        heading: ["var(--font-heading)"],
-      },
       keyframes: {
         "accordion-down": {
-          from: { height: "0" },
+          from: { height: 0 },
           to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
           from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
+          to: { height: 0 },
+        },
+        "progress-bar": {
+          "0%": { opacity: 0.7 },
+          "50%": { opacity: 1 },
+          "100%": { opacity: 0.7 }
+        },
+        "pulse-subtle": {
+          "0%": { opacity: 0.8 },
+          "50%": { opacity: 1 },
+          "100%": { opacity: 0.8 }
+        },
+        "circle-load": {
+          "0%": { strokeDashoffset: "113.1" },
+          "100%": { strokeDashoffset: "var(--final-offset)" }
+        },
+        "bar-load": {
+          "0%": { width: "0%" },
+          "100%": { width: "var(--final-width)" }
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "progress-bar": "progress-bar 2s ease-in-out infinite",
+        "pulse-subtle": "pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "circle-load": "circle-load 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards",
+        "bar-load": "bar-load 1.5s cubic-bezier(0.4, 0, 0.2, 1) forwards",
       },
     },
   },
@@ -75,4 +100,3 @@ const config = {
 }
 
 export default config
-
