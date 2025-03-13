@@ -2,7 +2,7 @@ import type React from "react"
 import { Sidebar } from "@/components/sidebar"
 import { ClientProviders } from "@/components/providers/client-providers"
 
-export default function ContentGenerationLayout({
+export default function SeoToolsLayout({
   children,
 }: {
   children: React.ReactNode

@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/badge"
 import ContentGenerationHistory from "@/components/content-generation/content-generation-history"
 import { Button } from "@/components/ui/button"
 import { AnimatedTitle } from "@/components/client-success-section"
+import { ClientProviders } from "@/components/providers/client-providers"
+import { isClient } from "@/utils/client-utils"
 
 export default function ContentGenerationPage() {
   const [activeTab, setActiveTab] = useState("generate-text")
@@ -23,6 +25,8 @@ export default function ContentGenerationPage() {
   
   // Initialize animated background
   useEffect(() => {
+    if (!isClient) return;
+    
     setMounted(true)
     
     if (!canvasRef.current) return

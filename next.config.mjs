@@ -15,6 +15,7 @@ const nextConfig = {
   },
   images: {
     unoptimized: true,
+    domains: ['images.unsplash.com', 'via.placeholder.com', 'res.cloudinary.com'],
   },
   output: 'standalone',
   experimental: {
@@ -35,7 +36,23 @@ const nextConfig = {
     DATAFORSEO_PASSWORD: process.env.crawlmetric_DATAFORSEO_PASSWORD,
     DATAFORSEO_API_ID: process.env.crawlmetric_DATAFORSEO_API_ID,
     DATAFORSEO_API_KEY: process.env.crawlmetric_DATAFORSEO_API_KEY
-  }
+  },
+  unstable_excludeFiles: [
+    '**/node_modules/ws/**/*',
+  ],
+  async headers() {
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Credentials', value: 'true' },
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET,OPTIONS,PATCH,DELETE,POST,PUT' },
+          { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version' },
+        ],
+      },
+    ];
+  },
 }
 
 mergeConfig(nextConfig, userConfig)

@@ -7,54 +7,66 @@ import { InstantAudit } from "@/components/seo-audit/instant-audit"
 import { SiteAudit } from "@/components/seo-audit/site-audit"
 import { LighthouseAuditForm } from "@/components/seo-audit/lighthouse-audit-form"
 import LighthouseResults from "@/components/seo-audit/lighthouse-results-fixed"
-import { useSeoAudit } from "@/contexts/seo-audit-context"
+import { ClientProviders } from "@/components/providers/client-providers"
 
 export default function SeoAuditPage() {
   const [activeTab, setActiveTab] = useState("instant")
-  const { activeSiteAuditTask } = useSeoAudit()
+  const [activeLighthouseTaskId, setActiveLighthouseTaskId] = useState<string | null>(null)
 
   return (
-    <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">SEO Audit Tools</h1>
-        <p className="text-gray-500">
-          Analyze and improve your website's search engine optimization with our comprehensive audit tools.
-        </p>
-      </div>
+    <ClientProviders>
+      <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">SEO Audit Tools</h1>
+          <p className="text-gray-500">
+            Analyze and improve your website's search engine optimization with our comprehensive SEO audit tools.
+          </p>
+        </div>
 
-      <Tabs
-        defaultValue="instant"
-        value={activeTab}
-        onValueChange={setActiveTab}
-        className="space-y-6"
-      >
-        <TabsList className="grid grid-cols-3 w-full max-w-md mb-8">
-          <TabsTrigger value="instant">Instant Audit</TabsTrigger>
-          <TabsTrigger value="site">Site Audit</TabsTrigger>
-          <TabsTrigger value="lighthouse">Lighthouse</TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 rounded-xl bg-gray-100 p-1">
+            <TabsTrigger
+              value="instant"
+              className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
+            >
+              Instant Audit
+            </TabsTrigger>
+            <TabsTrigger
+              value="site"
+              className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
+            >
+              Site Audit
+            </TabsTrigger>
+            <TabsTrigger
+              value="lighthouse"
+              className="rounded-lg data-[state=active]:bg-white data-[state=active]:text-gray-900 data-[state=active]:shadow-sm"
+            >
+              Lighthouse Audit
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="instant" className="space-y-6">
-          <InstantAudit />
-        </TabsContent>
+          <TabsContent value="instant" className="space-y-6">
+            <InstantAudit />
+          </TabsContent>
 
-        <TabsContent value="site" className="space-y-6">
-          <SiteAudit />
-        </TabsContent>
+          <TabsContent value="site" className="space-y-6">
+            <SiteAudit />
+          </TabsContent>
 
-        <TabsContent value="lighthouse" className="space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div>
-              <LighthouseAuditForm />
-            </div>
-            {activeSiteAuditTask && (
+          <TabsContent value="lighthouse" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
-                <LighthouseResults taskId={activeSiteAuditTask} />
+                <LighthouseAuditForm onTaskCreated={setActiveLighthouseTaskId} />
               </div>
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
-    </div>
+              {activeLighthouseTaskId && (
+                <div>
+                  <LighthouseResults taskId={activeLighthouseTaskId} />
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+    </ClientProviders>
   )
 }

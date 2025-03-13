@@ -94,6 +94,10 @@ interface LighthouseResult {
   runWarnings: any[]
 }
 
+interface LighthouseAuditFormProps {
+  onTaskCreated?: (taskId: string) => void;
+}
+
 // Memoized CircularProgress component to prevent unnecessary re-renders
 const CircularProgress = memo(
   ({
@@ -186,7 +190,7 @@ const CircularProgress = memo(
 
 CircularProgress.displayName = "CircularProgress"
 
-export function LighthouseAuditForm() {
+export function LighthouseAuditForm({ onTaskCreated }: LighthouseAuditFormProps) {
   const {
     startLighthouseAudit,
     getLighthouseResults,
@@ -365,6 +369,10 @@ export function LighthouseAuditForm() {
         // Set this task as the active task
         setActiveSiteAuditTask(taskData.taskId)
         setLocalTaskId(taskData.taskId)
+
+        if (onTaskCreated) {
+          onTaskCreated(taskData.taskId);
+        }
 
         // Start polling for results
         setIsPolling(true)
@@ -1216,4 +1224,3 @@ export function LighthouseAuditForm() {
     </AnimatePresence>
   )
 }
-
