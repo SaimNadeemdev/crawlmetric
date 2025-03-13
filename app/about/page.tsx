@@ -1,3 +1,5 @@
+"use client"
+
 import type { Metadata } from "next"
 import { AnimatedTitle } from "@/components/client-success-section"
 import { SiteFooter } from "@/components/site-footer"

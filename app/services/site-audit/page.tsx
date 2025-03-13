@@ -1,3 +1,5 @@
+"use client"
+
 import type { Metadata } from "next"
 import SiteAuditForm from "./site-audit-form"
 import { GradientHeading } from "@/components/ui/gradient-heading"

@@ -49,9 +49,9 @@ export async function startSiteAudit(url: string) {
           max_crawl_pages: 100, // Limit the number of pages to crawl
           load_resources: true,
           enable_javascript: true,
-          // Use a string that will be executed on the client side only
-          // Avoid using window directly in server components
-          custom_js: "(function() { var meta = {}; try { meta.url = document.URL || ''; } catch(e) { meta.url = ''; } return meta; })();",
+          // Use a safe approach that doesn't directly reference document
+          // This will be executed on the client side only
+          custom_js: "(function() { var meta = {}; try { if (typeof window !== 'undefined') { meta.url = window.location.href || ''; } } catch(e) { meta.url = ''; } return meta; })();",
         },
       ]),
     })

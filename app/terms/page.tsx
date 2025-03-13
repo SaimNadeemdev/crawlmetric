@@ -1,3 +1,5 @@
+"use client"
+
 import type { Metadata } from "next"
 import { SiteFooter } from "@/components/site-footer"
 
