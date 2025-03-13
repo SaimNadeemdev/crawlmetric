@@ -18,8 +18,7 @@ const nextConfig = {
   },
   experimental: {
     webpackBuildWorker: true,
-    parallelServerBuildTraces: true,
-    parallelServerCompiles: true,
+    serverActions: true,
   },
   // Configure SWC compiler options
   compiler: {
@@ -30,7 +29,11 @@ const nextConfig = {
     NEXT_PUBLIC_SUPABASE_URL: process.env.crawlmetric_NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.crawlmetric_NEXT_PUBLIC_SUPABASE_ANON_KEY,
     SUPABASE_URL: process.env.crawlmetric_SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE_KEY: process.env.crawlmetric_SUPABASE_SERVICE_ROLE_KEY
+    SUPABASE_SERVICE_ROLE_KEY: process.env.crawlmetric_SUPABASE_SERVICE_ROLE_KEY,
+    DATAFORSEO_USERNAME: process.env.crawlmetric_DATAFORSEO_USERNAME,
+    DATAFORSEO_PASSWORD: process.env.crawlmetric_DATAFORSEO_PASSWORD,
+    DATAFORSEO_API_ID: process.env.crawlmetric_DATAFORSEO_API_ID,
+    DATAFORSEO_API_KEY: process.env.crawlmetric_DATAFORSEO_API_KEY
   }
 }
 
