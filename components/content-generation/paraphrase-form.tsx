@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { motion, AnimatePresence } from "framer-motion"
-import { Sparkles, MessageSquareText, Sliders, History, ArrowRight } from "lucide-react"
+import { Sparkles, MessageSquare, Sliders, History, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Textarea } from "@/components/ui/textarea"
@@ -199,7 +199,7 @@ export function ParaphraseForm() {
                       <FormItem>
                         <div className="flex items-center gap-2 mb-3">
                           <FormLabel className="text-base font-medium text-gray-800 flex items-center gap-2">
-                            <MessageSquareText className="h-5 w-5 text-[#0071e3]" />
+                            <MessageSquare className="h-5 w-5 text-[#0071e3]" />
                             Text to Paraphrase
                           </FormLabel>
                           <Badge
@@ -255,9 +255,21 @@ export function ParaphraseForm() {
                               defaultValue={[field.value]}
                               onValueChange={(value) => field.onChange(value[0])}
                               className="relative z-10"
-                              thumbClassName="h-6 w-6 bg-white border-2 border-[#0071e3] shadow-md"
-                              trackClassName="bg-gradient-to-r from-[#0071e3] to-[#40a9ff]"
                             />
+                            <style jsx global>{
+                              `
+                              .slider-thumb {
+                                height: 24px;
+                                width: 24px;
+                                background: white;
+                                border: 2px solid #0071e3;
+                                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                              }
+                              .slider-track {
+                                background: linear-gradient(to right, #0071e3, #40a9ff);
+                              }
+                              `
+                            }</style>
                           </div>
                         </FormControl>
                         <div className="flex justify-between text-sm text-gray-500 px-1">
@@ -390,4 +402,3 @@ export function ParaphraseForm() {
     </div>
   )
 }
-

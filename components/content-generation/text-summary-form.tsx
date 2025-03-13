@@ -15,7 +15,7 @@ import {
   Check,
   BookOpen,
   Sparkles,
-  MessageSquareText,
+  MessageSquare,
   Lightbulb,
   ChevronRight,
   Zap,
@@ -281,7 +281,7 @@ export function TextAnalysisForm() {
                               <FormItem>
                                 <div className="flex items-center gap-2 mb-3">
                                   <FormLabel className="text-base font-medium text-gray-800 flex items-center gap-2">
-                                    <MessageSquareText className="h-5 w-5 text-[#0071e3]" />
+                                    <MessageSquare className="h-5 w-5 text-[#0071e3]" />
                                     Text Content
                                   </FormLabel>
                                   <Badge
@@ -700,7 +700,7 @@ export function TextAnalysisForm() {
                                         className="space-y-4 bg-white/80 backdrop-blur-sm rounded-xl border border-[#d2d2d7] p-5"
                                       >
                                         <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                                          <MessageSquareText className="h-4 w-4 text-[#0071e3]" />
+                                          <MessageSquare className="h-4 w-4 text-[#0071e3]" />
                                           Top Keywords
                                         </h3>
                                         <div className="space-y-3">

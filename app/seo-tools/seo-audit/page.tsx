@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { InstantAudit } from "@/components/seo-audit/instant-audit"
 import { SiteAudit } from "@/components/seo-audit/site-audit"
 import { LighthouseAuditForm } from "@/components/seo-audit/lighthouse-audit-form"
-import { LighthouseResults } from "@/components/seo-audit/lighthouse-results-fixed"
+import LighthouseResults from "@/components/seo-audit/lighthouse-results-fixed"
 import { useSeoAudit } from "@/contexts/seo-audit-context"
 
 export default function SeoAuditPage() {
