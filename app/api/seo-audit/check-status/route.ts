@@ -7,6 +7,9 @@ const API_PASSWORD = "af0929d9a9ee7cad"
 // Base64 encode the credentials for Basic Auth
 const AUTH_HEADER = Buffer.from(`${API_LOGIN}:${API_PASSWORD}`).toString("base64")
 
+// Use dynamic route handlers to avoid static generation errors
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const taskId = request.nextUrl.searchParams.get("taskId")
@@ -46,4 +49,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
-

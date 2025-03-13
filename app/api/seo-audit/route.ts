@@ -2,6 +2,10 @@ import { NextResponse } from "next/server"
 import { headers } from "next/headers"
 import { getBaseUrl } from "@/lib/utils"
 
+// Use dynamic route handlers to avoid static generation errors
+export const dynamic = 'force-dynamic';
+
+
 // DataForSEO API credentials
 const API_LOGIN = "saim@makewebeasy.llc"
 const API_PASSWORD = "af0929d9a9ee7cad"

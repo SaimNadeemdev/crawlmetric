@@ -75,3 +75,27 @@ export const setCookie = (name: string, value: string, maxAge: number) => {
     return false;
   }
 };
+
+/**
+ * Safely adds a style element to the document head on the client side
+ * @param styles CSS styles as a string
+ * @returns Cleanup function to remove the style element
+ */
+export const addStyleToHead = (styles: string): (() => void) => {
+  if (typeof document === 'undefined') {
+    console.warn('addStyleToHead called during server rendering');
+    return () => {}; // No-op for SSR
+  }
+  
+  // Create style element
+  const styleEl = document.createElement('style');
+  styleEl.innerHTML = styles;
+  document.head.appendChild(styleEl);
+
+  // Return cleanup function
+  return () => {
+    if (document.head.contains(styleEl)) {
+      document.head.removeChild(styleEl);
+    }
+  };
+};

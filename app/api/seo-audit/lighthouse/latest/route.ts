@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadTaskHistory, getAllTaskHistory, getUrlForTaskId } from "@/lib/task-history";
 
+// Use dynamic route handlers to avoid static generation errors
+export const dynamic = 'force-dynamic';
+
+
 // DataForSEO API credentials - use environment variables with fallbacks
 const API_LOGIN = process.env.DATAFORSEO_USERNAME || "saim.nadeem@gmail.com";
 const API_PASSWORD = process.env.DATAFORSEO_PASSWORD || "9e8f3d68a939d229";

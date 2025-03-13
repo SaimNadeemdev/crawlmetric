@@ -1,6 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase"
 
+// Use dynamic route handlers to avoid static generation errors
+export const dynamic = 'force-dynamic';
+
+
 // GET endpoint to retrieve keyword research history for the logged-in user
 export async function GET(request: NextRequest) {
   try {

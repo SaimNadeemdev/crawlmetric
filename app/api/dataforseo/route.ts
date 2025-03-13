@@ -1,6 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { adaptDataForSeoResponse } from "@/lib/ai-data-adapter"
 
+// Use dynamic route handlers to avoid static generation errors
+export const dynamic = 'force-dynamic';
+
+
 const DATAFORSEO_API_URL = "https://api.dataforseo.com/v3"
 const DATAFORSEO_LOGIN = process.env.DATAFORSEO_LOGIN || ""
 const DATAFORSEO_PASSWORD = process.env.DATAFORSEO_PASSWORD || ""

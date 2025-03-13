@@ -40,26 +40,29 @@ function RegisterPage() {
 
   // Add CSS styles to document head
   useEffect(() => {
-    // Create style element
-    const styleEl = document.createElement("style")
-    styleEl.innerHTML = `
-      @keyframes gradient-animation {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-      }
+    // Use a client-side only approach for manipulating the DOM
+    import('@/utils/client-utils').then(({ addStyleToHead }) => {
+      // Define the styles
+      const styles = `
+        @keyframes gradient-animation {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes pulse-glow {
+          0% { filter: blur(10px); opacity: 0.5; }
+          50% { filter: blur(15px); opacity: 0.7; }
+          100% { filter: blur(10px); opacity: 0.5; }
+        }
+      `;
       
-      @keyframes pulse-glow {
-        0% { filter: blur(10px); opacity: 0.5; }
-        50% { filter: blur(15px); opacity: 0.7; }
-        100% { filter: blur(10px); opacity: 0.5; }
-      }
-    `
-    document.head.appendChild(styleEl)
-
-    return () => {
-      document.head.removeChild(styleEl)
-    }
+      // Add the styles to head
+      const cleanup = addStyleToHead(styles);
+      
+      // Return cleanup function
+      return cleanup;
+    });
   }, [])
 
   // Set mounted state
@@ -444,21 +447,7 @@ function RegisterPage() {
           color: #222222;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
-        
-        /* Animation keyframes */
-        @keyframes gradient-animation {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        
-        @keyframes pulse-glow {
-          0% { filter: blur(10px); opacity: 0.5; }
-          50% { filter: blur(15px); opacity: 0.7; }
-          100% { filter: blur(10px); opacity: 0.5; }
-        }
       `}</style>
     </div>
   )
 }
-

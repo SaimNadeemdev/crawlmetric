@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadTaskHistory, getAllTaskHistory } from "@/lib/task-history";
 
+// Use dynamic route handlers to avoid static generation errors
+export const dynamic = 'force-dynamic';
+
+
 // Route handler for GET requests to retrieve task history
 export async function GET(request: NextRequest) {
   try {

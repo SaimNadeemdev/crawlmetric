@@ -507,22 +507,18 @@ export default function DashboardPage() {
       // Combine header and rows
       const csvContent = [headers, ...rows].join("\n");
       
-      // Create a blob and download link
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `crawlmetric-keywords-${new Date().toISOString().split("T")[0]}.csv`);
-      document.body.appendChild(link);
-      
-      // Trigger download and clean up
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-      toast({
-        title: "Export complete",
-        description: "Your keyword data has been downloaded successfully.",
+      // Use client-side utility for downloading
+      import('@/utils/client-utils').then(({ downloadFile }) => {
+        downloadFile(
+          csvContent,
+          `crawlmetric-keywords-${new Date().toISOString().split("T")[0]}.csv`,
+          'text/csv;charset=utf-8;'
+        );
+        
+        toast({
+          title: "Export complete",
+          description: "Your keyword data has been downloaded successfully.",
+        });
       });
     } catch (error) {
       console.error("Export error:", error);

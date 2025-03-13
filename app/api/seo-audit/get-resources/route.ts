@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { getDataForSeoCredentials } from "@/lib/utils";
 
+// Use dynamic route handlers to avoid static generation errors
+export const dynamic = 'force-dynamic';
+
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const taskId = searchParams.get("taskId");

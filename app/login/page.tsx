@@ -40,26 +40,25 @@ function LoginPage() {
 
   // Add CSS styles to document head
   useEffect(() => {
-    // Create style element
-    const styleEl = document.createElement("style")
-    styleEl.innerHTML = `
-      @keyframes gradient-animation {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-      }
+    import('@/utils/client-utils').then(({ addStyleToHead }) => {
+      const styles = `
+        @keyframes gradient-animation {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes pulse-glow {
+          0% { filter: blur(10px); opacity: 0.5; }
+          50% { filter: blur(15px); opacity: 0.7; }
+          100% { filter: blur(10px); opacity: 0.5; }
+        }
+      `;
       
-      @keyframes pulse-glow {
-        0% { filter: blur(10px); opacity: 0.5; }
-        50% { filter: blur(15px); opacity: 0.7; }
-        100% { filter: blur(10px); opacity: 0.5; }
-      }
-    `
-    document.head.appendChild(styleEl)
-
-    return () => {
-      document.head.removeChild(styleEl)
-    }
+      const cleanup = addStyleToHead(styles);
+      
+      return cleanup;
+    });
   }, [])
 
   // Direct Supabase client for testing
@@ -479,21 +478,7 @@ function LoginPage() {
           color: #222222;
           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
-        
-        /* Animation keyframes */
-        @keyframes gradient-animation {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
-        }
-        
-        @keyframes pulse-glow {
-          0% { filter: blur(10px); opacity: 0.5; }
-          50% { filter: blur(15px); opacity: 0.7; }
-          100% { filter: blur(10px); opacity: 0.5; }
-        }
       `}</style>
     </div>
   )
 }
-
