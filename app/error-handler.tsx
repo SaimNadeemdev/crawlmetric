@@ -1,23 +1,34 @@
 "use client"
 
 import { useEffect } from "react"
+import { useToast } from "@/components/ui/use-toast"
 
 export function GlobalErrorHandler() {
+  const { toast } = useToast()
+  
   useEffect(() => {
-    // This will catch any unhandled Promise rejections globally
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return
+    
     const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      event.preventDefault() // Prevents the default error from appearing in console
-      console.error("Unhandled Promise rejection:", event.reason)
-      // You could also log this to an error tracking service
+      console.error("Unhandled promise rejection caught by ErrorHandler:", event.reason)
+      // You can also log this to an error tracking service
+      toast({
+        title: "An unexpected error occurred",
+        description: event.reason?.message || "An unexpected error occurred",
+        variant: "destructive",
+      })
     }
 
     window.addEventListener("unhandledrejection", handleUnhandledRejection)
 
     return () => {
-      window.removeEventListener("unhandledrejection", handleUnhandledRejection)
+      // Safe check for browser environment
+      if (typeof window !== 'undefined') {
+        window.removeEventListener("unhandledrejection", handleUnhandledRejection)
+      }
     }
-  }, [])
+  }, [toast])
 
   return null // This component doesn't render anything
 }
-

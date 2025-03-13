@@ -18,6 +18,10 @@ import { motion } from "framer-motion"
 import { AnimatedTitle } from "@/components/client-success-section"
 import { useRef } from "react"
 
+// Force dynamic rendering to prevent serialization errors
+export const dynamic = 'force-dynamic';
+
+
 // Initialize Supabase client with hardcoded credentials for client-side use
 const supabaseUrl = 'https://nzxgnnpthtefahosnolm.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56eGdubnB0aHRlZmFob3Nub2xtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEzMDQ1MDcsImV4cCI6MjA1Njg4MDUwN30.kPPrr1NaDkl1OxP9g0oO9l2tWnKWNw2h4LXiDD7v3Mg'
@@ -49,19 +53,22 @@ export default function OverviewPage() {
 
   // Animated dotted background
   useEffect(() => {
-    if (!canvasRef.current) return
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return
     
     const canvas = canvasRef.current
-    const ctx = canvas.getContext('2d')
+    if (!canvas) return
+
+    const ctx = canvas.getContext("2d")
     if (!ctx) return
-    
+
     let animationFrameId: number
-    
+
     const resizeCanvas = () => {
       canvas.width = window.innerWidth
       canvas.height = window.innerHeight
     }
-    
+
     const drawDottedBackground = (t: number) => {
       if (!ctx) return
       
@@ -99,10 +106,13 @@ export default function OverviewPage() {
       animationFrameId = requestAnimationFrame(animate)
     }
     
-    window.addEventListener("resize", resizeCanvas)
     resizeCanvas()
     animate()
-    
+
+    // Add resize listener
+    window.addEventListener("resize", resizeCanvas)
+
+    // Clean up
     return () => {
       window.removeEventListener("resize", resizeCanvas)
       cancelAnimationFrame(animationFrameId)

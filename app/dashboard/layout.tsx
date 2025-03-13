@@ -33,17 +33,20 @@ export default function DashboardLayout({
         })
         
         // Check for session in localStorage first
-        const storedSession = localStorage.getItem('supabase.auth.token')
-        if (storedSession) {
-          console.log("Dashboard - Found stored session in localStorage")
-          try {
-            const parsedSession = JSON.parse(storedSession)
-            if (parsedSession && parsedSession.access_token) {
-              console.log("Dashboard - Using stored session from localStorage")
-              setHasSession(true)
+        // Safe check for browser environment
+        if (typeof window !== 'undefined') {
+          const storedSession = localStorage.getItem('supabase.auth.token')
+          if (storedSession) {
+            console.log("Dashboard - Found stored session in localStorage")
+            try {
+              const parsedSession = JSON.parse(storedSession)
+              if (parsedSession && parsedSession.access_token) {
+                console.log("Dashboard - Using stored session from localStorage")
+                setHasSession(true)
+              }
+            } catch (e) {
+              console.error("Dashboard - Error parsing stored session:", e)
             }
-          } catch (e) {
-            console.error("Dashboard - Error parsing stored session:", e)
           }
         }
         
@@ -63,6 +66,11 @@ export default function DashboardLayout({
       } catch (error) {
         console.error("Dashboard - Unexpected error checking session:", error)
         setHasSession(false)
+        // Redirect to login if there's an error
+        // Safe check for browser environment
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login'
+        }
       } finally {
         setIsCheckingSession(false)
       }

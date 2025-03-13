@@ -2,6 +2,9 @@
 
 import type React from "react"
 
+// Force dynamic rendering to prevent serialization errors
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -81,6 +84,9 @@ function LoginPage() {
 
   // Dotted background animation
   useEffect(() => {
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return
+    
     const canvas = canvasRef.current
     if (!canvas) return
 
@@ -94,6 +100,9 @@ function LoginPage() {
       canvas.width = window.innerWidth
       canvas.height = window.innerHeight
     }
+
+    // Initial resize
+    resizeCanvas()
 
     // Create dotted background
     const drawDottedBackground = (t: number) => {
@@ -139,8 +148,9 @@ function LoginPage() {
       animationFrameId = requestAnimationFrame(animate)
     }
 
+    // Add resize listener
     window.addEventListener("resize", resizeCanvas)
-    resizeCanvas()
+
     animate()
 
     return () => {
@@ -189,14 +199,14 @@ function LoginPage() {
 
       // Try direct Supabase auth first
       addDebugInfo("Trying direct Supabase auth...")
-      const { data, error: supabaseError } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
-      if (supabaseError) {
-        addDebugInfo(`Direct Supabase auth failed: ${supabaseError.message}`)
-        throw supabaseError
+      if (error) {
+        addDebugInfo(`Direct Supabase auth failed: ${error.message}`)
+        throw error
       }
 
       addDebugInfo(`Direct Supabase auth successful: ${data.user?.email}`)
@@ -207,8 +217,11 @@ function LoginPage() {
 
       if (sessionData.session) {
         // Store the session in localStorage as a backup
-        localStorage.setItem("supabase.auth.token", JSON.stringify(sessionData.session))
-        addDebugInfo("Session stored in localStorage")
+        // Safe check for browser environment
+        if (typeof window !== 'undefined') {
+          localStorage.setItem("supabase.auth.token", JSON.stringify(sessionData.session))
+          addDebugInfo("Session stored in localStorage")
+        }
 
         // Show success message and button instead of automatic redirect
         setLoginSuccess(true)
@@ -227,7 +240,7 @@ function LoginPage() {
   }
 
   const goToDashboard = () => {
-    window.location.href = "/dashboard/main"
+    router.push("/dashboard/main")
   }
 
   return (

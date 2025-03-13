@@ -48,20 +48,24 @@ export function ContentGenerationProvider({ children }: { children: React.ReactN
       
       // Always try to load from localStorage first
       let localHistory: ContentGenerationHistoryItem[] = []
-      try {
-        const storedHistory = localStorage.getItem("content_generation_history")
-        if (storedHistory) {
-          localHistory = JSON.parse(storedHistory)
-          console.log(`Loaded ${localHistory.length} items from localStorage`)
-          
-          // Filter by type if specified
-          if (type) {
-            localHistory = localHistory.filter((item: any) => item.type === type)
-            console.log(`Filtered to ${localHistory.length} items of type ${type}`)
+      
+      // Safe check for browser environment
+      if (typeof window !== 'undefined') {
+        try {
+          const storedHistory = localStorage.getItem("content_generation_history")
+          if (storedHistory) {
+            localHistory = JSON.parse(storedHistory)
+            console.log(`Loaded ${localHistory.length} items from localStorage`)
+            
+            // Filter by type if specified
+            if (type) {
+              localHistory = localHistory.filter((item: any) => item.type === type)
+              console.log(`Filtered to ${localHistory.length} items of type ${type}`)
+            }
           }
+        } catch (error) {
+          console.error("Error loading from localStorage:", error)
         }
-      } catch (localStorageError) {
-        console.error("Error loading from localStorage:", localStorageError)
       }
       
       // If not authenticated, just use localStorage
@@ -144,8 +148,11 @@ export function ContentGenerationProvider({ children }: { children: React.ReactN
             
             // Update localStorage with the merged history for offline access
             try {
-              localStorage.setItem("content_generation_history", JSON.stringify(sortedHistory))
-              console.log("Updated localStorage with merged history")
+              // Safe check for browser environment
+              if (typeof window !== 'undefined') {
+                localStorage.setItem("content_generation_history", JSON.stringify(sortedHistory))
+                console.log("Updated localStorage with merged history")
+              }
             } catch (storageError) {
               console.error("Error updating localStorage:", storageError)
             }
@@ -204,7 +211,10 @@ export function ContentGenerationProvider({ children }: { children: React.ReactN
     const addToLocalHistory = () => {
       setHistory(prev => {
         const newHistory = [item, ...prev].slice(0, 20) // Limit to 20 items
-        localStorage.setItem("content_generation_history", JSON.stringify(newHistory))
+        // Safe check for browser environment
+        if (typeof window !== 'undefined') {
+          localStorage.setItem("content_generation_history", JSON.stringify(newHistory))
+        }
         return newHistory
       })
     }
@@ -298,7 +308,10 @@ export function ContentGenerationProvider({ children }: { children: React.ReactN
       // Update the history state with the new item
       setHistory(prev => {
         const newHistory = [savedItem, ...prev].slice(0, 20) // Limit to 20 items
-        localStorage.setItem("content_generation_history", JSON.stringify(newHistory))
+        // Safe check for browser environment
+        if (typeof window !== 'undefined') {
+          localStorage.setItem("content_generation_history", JSON.stringify(newHistory))
+        }
         return newHistory
       })
       
@@ -328,7 +341,10 @@ export function ContentGenerationProvider({ children }: { children: React.ReactN
       console.log("Clearing content generation history")
       
       // Clear localStorage
-      localStorage.removeItem("content_generation_history")
+      // Safe check for browser environment
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem("content_generation_history")
+      }
       
       // If not authenticated, just clear the local state
       if (!isAuthenticated()) {
@@ -381,15 +397,18 @@ export function ContentGenerationProvider({ children }: { children: React.ReactN
       setHistory(prev => prev.filter(item => item.id !== id))
       
       // Update localStorage
-      const localHistory = localStorage.getItem("content_generation_history")
-      if (localHistory) {
-        try {
-          const parsedHistory = JSON.parse(localHistory)
-          const updatedHistory = parsedHistory.filter((item: any) => item.id !== id)
-          localStorage.setItem("content_generation_history", JSON.stringify(updatedHistory))
-          console.log(`Updated localStorage after removing item ${id}`)
-        } catch (e) {
-          console.error("Error updating localStorage:", e)
+      // Safe check for browser environment
+      if (typeof window !== 'undefined') {
+        const localHistory = localStorage.getItem("content_generation_history")
+        if (localHistory) {
+          try {
+            const parsedHistory = JSON.parse(localHistory)
+            const updatedHistory = parsedHistory.filter((item: any) => item.id !== id)
+            localStorage.setItem("content_generation_history", JSON.stringify(updatedHistory))
+            console.log(`Updated localStorage after removing item ${id}`)
+          } catch (e) {
+            console.error("Error updating localStorage:", e)
+          }
         }
       }
       

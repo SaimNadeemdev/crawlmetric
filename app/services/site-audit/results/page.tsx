@@ -1,7 +1,13 @@
+"use client"
+
 import type { Metadata } from "next"
+import { useEffect } from "react"
 import { getSiteAuditResults, getSiteAuditSummary, getPagesWithIssues } from "../actions"
 import AuditResults from "./audit-results"
 import { GradientHeading } from "@/components/ui/gradient-heading"
+
+// Force dynamic rendering to prevent serialization errors
+export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: "Site Audit Results | SEO Tool",
@@ -13,7 +19,7 @@ export default async function SiteAuditResultsPage({
 }: {
   searchParams: { taskId?: string }
 }) {
-  const taskId = searchParams.taskId
+  const taskId = searchParams.taskId || "";
 
   if (!taskId) {
     return (
@@ -31,6 +37,18 @@ export default async function SiteAuditResultsPage({
 
   // If the task is still in progress, show a loading message
   if (resultsResponse.success && resultsResponse.status === "in_progress") {
+    const handleReloadPage = () => {
+      // Safe check for browser environment
+      if (typeof window !== 'undefined') {
+        window.location.reload();
+      }
+    };
+
+    useEffect(() => {
+      const timer = setTimeout(handleReloadPage, 10000);
+      return () => clearTimeout(timer);
+    }, []);
+
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto text-center">
@@ -39,25 +57,14 @@ export default async function SiteAuditResultsPage({
             subtitle="Your site audit is currently running. This may take a few minutes."
             className="mb-8"
           />
-          <div className="flex justify-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-purple-500"></div>
+          <div className="flex flex-col items-center justify-center min-h-[300px] p-8 text-center">
+            <div className="animate-pulse mb-4 w-16 h-16 rounded-full border-4 border-blue-500 border-t-transparent" />
+            <GradientHeading title="Processing your audit..." className="mb-2" />
+            <p className="text-muted-foreground mb-6">This may take a few minutes. The page will refresh automatically.</p>
           </div>
           <p className="mt-6 text-gray-400">
-            This page will automatically refresh to check for results.
-            <br />
             Task ID: {taskId}
           </p>
-
-          {/* Client-side refresh script */}
-          <script
-            dangerouslySetInnerHTML={{
-              __html: `
-                setTimeout(function() {
-                  window.location.reload();
-                }, 10000);
-              `,
-            }}
-          />
         </div>
       </div>
     )
@@ -79,6 +86,10 @@ export default async function SiteAuditResultsPage({
   const summaryResponse = await getSiteAuditSummary(taskId)
   const pagesWithIssuesResponse = await getPagesWithIssues(taskId)
 
+  // Ensure summary and pages data are properly typed
+  const summary = summaryResponse.success ? summaryResponse.data || null : null;
+  const pages = pagesWithIssuesResponse.success ? pagesWithIssuesResponse.data || null : null;
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="max-w-6xl mx-auto">
@@ -91,13 +102,12 @@ export default async function SiteAuditResultsPage({
         <AuditResults
           taskId={taskId}
           taskData={resultsResponse.data}
-          summaryData={summaryResponse.success ? summaryResponse.data : null}
-          pagesWithIssues={pagesWithIssuesResponse.success ? pagesWithIssuesResponse.data : null}
-          summaryError={!summaryResponse.success ? summaryResponse.error : null}
-          pagesError={!pagesWithIssuesResponse.success ? pagesWithIssuesResponse.error : null}
+          summaryData={summary}
+          pagesWithIssues={pages}
+          summaryError={summaryResponse.success ? null : (summaryResponse.error || null)}
+          pagesError={pagesWithIssuesResponse.success ? null : (pagesWithIssuesResponse.error || null)}
         />
       </div>
     </div>
   )
 }
-

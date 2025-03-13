@@ -61,6 +61,10 @@ import { motion } from "framer-motion"
 import { fetchKeywords, removeKeyword, refreshKeywordRanking } from "@/lib/api"
 import { AnimatedTitle } from "@/components/client-success-section"
 
+// Force dynamic rendering to prevent serialization errors
+export const dynamic = 'force-dynamic';
+
+
 // Initialize Supabase client with hardcoded credentials for client-side use
 const supabaseUrl = "https://nzxgnnpthtefahosnolm.supabase.co"
 const supabaseKey =
@@ -155,6 +159,9 @@ export default function DashboardPage() {
 
   // Handle scroll for header effects
   useEffect(() => {
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return
+    
     const handleScroll = () => {
       if (window.scrollY > 10) {
         setScrolled(true)
@@ -169,6 +176,9 @@ export default function DashboardPage() {
 
   // Dotted background animation
   useEffect(() => {
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return
+    
     const canvas = canvasRef.current
     if (!canvas) return
 
@@ -227,10 +237,10 @@ export default function DashboardPage() {
       animationFrameId = requestAnimationFrame(animate)
     }
 
+    // Add resize listener
     window.addEventListener("resize", resizeCanvas)
-    resizeCanvas()
-    animate()
 
+    // Clean up
     return () => {
       window.removeEventListener("resize", resizeCanvas)
       cancelAnimationFrame(animationFrameId)
