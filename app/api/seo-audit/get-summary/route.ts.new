@@ -1,0 +1,107 @@
+import { type NextRequest, NextResponse } from "next/server"
+
+// DataForSEO API credentials - hardcoded for all users
+const API_LOGIN = "saim@makewebeasy.llc"
+const API_PASSWORD = "af0929d9a9ee7cad"
+
+// Base64 encode the credentials for Basic Auth
+const AUTH_HEADER = Buffer.from(`${API_LOGIN}:${API_PASSWORD}`).toString("base64")
+
+export async function GET(request: NextRequest) {
+  try {
+    const taskId = request.nextUrl.searchParams.get("taskId")
+
+    if (!taskId) {
+      return NextResponse.json({ error: "Task ID is required" }, { status: 400 })
+    }
+
+    // Prepare the request to DataForSEO API
+    const apiEndpoint = "https://api.dataforseo.com/v3/on_page/summary"
+    const apiBody = [
+      {
+        id: taskId,
+        limit: 1,
+      },
+    ]
+
+    console.log(`Getting summary for task ID: ${taskId}`)
+
+    // Make the request to DataForSEO API
+    const response = await fetch(apiEndpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${AUTH_HEADER}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(apiBody),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`DataForSEO API error: ${response.status} ${errorText}`)
+      return NextResponse.json({ error: `API error: ${response.status}` }, { status: response.status })
+    }
+
+    const data = await response.json()
+    
+    // Log the full response for debugging
+    console.log(`Summary response for task ${taskId}:`, JSON.stringify(data))
+    
+    // Process and enhance the response data
+    if (data.tasks && data.tasks.length > 0 && data.tasks[0].result && data.tasks[0].result.length > 0) {
+      const result = data.tasks[0].result[0]
+      
+      // Return only the processed result instead of the entire data object
+      return NextResponse.json(result)
+    } else {
+      // If no result is found, return a default structure that the frontend expects
+      const defaultResult = {
+        crawl_progress: "in_progress",
+        crawl_status: {
+          status_code: 2,
+          status_message: "In progress",
+          max_crawl_pages: 0,
+          pages_in_queue: 0,
+          pages_crawled: 0,
+        },
+        domain_info: {
+          name: taskId.split("_")[0] || "Unknown Domain",
+        },
+        pages_crawled: 0,
+        pages_count: 0,
+        page_metrics: {
+          broken_resources: 0,
+          broken_links: 0,
+          duplicate_title: 0,
+          duplicate_description: 0,
+          duplicate_content: 0,
+          no_description: 0,
+          no_title: 0,
+          title_too_long: 0,
+          title_too_short: 0,
+          description_too_long: 0,
+          description_too_short: 0,
+          low_content_rate: 0,
+          small_page_size: 0,
+          large_page_size: 0,
+          slow_page: 0,
+          no_h1: 0,
+          too_many_h1: 0,
+          https_to_http: 0,
+          canonical_to_non_canonical: 0,
+        },
+        health_score: 100,
+        issues: {
+          critical: [],
+          important: [],
+          minor: []
+        }
+      }
+      
+      return NextResponse.json(defaultResult)
+    }
+  } catch (error) {
+    console.error("Error getting task summary:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}

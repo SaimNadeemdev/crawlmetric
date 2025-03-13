@@ -51,6 +51,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { AnimatedTitle } from "@/components/client-success-section"
 import { 
   Download as DownloadIcon, 
   Search as SearchIcon, 
@@ -85,7 +87,8 @@ export default function KeywordResearch() {
     searchHistory,
     loadHistory,
     clearHistory,
-    isHistoryLoading
+    isHistoryLoading,
+    addToHistory
   } = useKeywordResearch()
 
   // Canvas reference for animated background
@@ -807,8 +810,8 @@ export default function KeywordResearch() {
     }
 
     return (
-      <div className="space-y-6 animate-scale-up">
-        <div className="flex items-center justify-between">
+      <div className="space-y-6 animate-scale-up border border-gray-100 rounded-[22px] shadow-sm bg-white/80 backdrop-blur-sm">
+        <div className="flex items-center justify-between p-4">
           <h3 className="text-lg font-medium">
             {filteredResults.length} {filteredResults.length === 1 ? 'result' : 'results'} found
           </h3>
@@ -833,136 +836,134 @@ export default function KeywordResearch() {
           </div>
         </div>
 
-        <div className="rounded-[22px] overflow-hidden border border-gray-100 shadow-sm bg-white/50 backdrop-blur-xl">
-          <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 250px)" }}>
-            <DataTable 
-              columns={getColumns(tableData, mode)} 
-              data={tableData}
-            />
-          </div>
-          
-          <style jsx global>{`
-            /* iOS-style table styling */
-            .data-table {
-              width: 100%;
-              border-collapse: separate;
-              border-spacing: 0;
-              table-layout: fixed;
-            }
-            
-            .data-table th {
-              background-color: rgba(255, 255, 255, 0.8);
-              backdrop-filter: blur(8px);
-              font-weight: 600;
-              color: #6b7280;
-              text-align: left;
-              padding: 8px 12px;
-              font-size: 0.8rem;
-              border-bottom: 1px solid rgba(229, 231, 235, 0.5);
-              white-space: nowrap;
-              position: sticky;
-              top: 0;
-              z-index: 10;
-            }
-            
-            .data-table td {
-              padding: 8px 12px;
-              border-bottom: 1px solid rgba(229, 231, 235, 0.3);
-              transition: background-color 0.2s ease;
-              vertical-align: middle;
-              white-space: nowrap;
-            }
-            
-            .data-table tr:hover td {
-              background-color: rgba(249, 250, 251, 0.5);
-            }
-            
-            .data-table tr:last-child td {
-              border-bottom: none;
-            }
-            
-            /* Animated row appearance */
-            @keyframes fadeIn {
-              from { opacity: 0; transform: translateY(4px); }
-              to { opacity: 1; transform: translateY(0); }
-            }
-            
-            .data-table tbody tr {
-              animation: fadeIn 0.3s ease forwards;
-              animation-delay: calc(var(--row-index, 0) * 0.03s);
-              opacity: 0;
-            }
-            
-            /* iOS-style scrollbar */
-            .overflow-auto::-webkit-scrollbar {
-              width: 4px;
-              height: 4px;
-            }
-            
-            .overflow-auto::-webkit-scrollbar-track {
-              background: transparent;
-            }
-            
-            .overflow-auto::-webkit-scrollbar-thumb {
-              background: rgba(156, 163, 175, 0.3);
-              border-radius: 2px;
-            }
-            
-            .overflow-auto::-webkit-scrollbar-thumb:hover {
-              background: rgba(156, 163, 175, 0.5);
-            }
-            
-            /* Fix for table container */
-            .overflow-auto {
-              scrollbar-width: thin;
-              scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
-            }
-            
-            /* iOS-style hover effects */
-            .data-table tr {
-              transition: transform 0.15s ease, box-shadow 0.15s ease;
-            }
-            
-            .data-table tr:hover {
-              transform: translateY(-1px);
-              box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-              z-index: 1;
-              position: relative;
-            }
-            
-            /* Fix for table container */
-            .rounded-md.border {
-              border: none;
-              overflow: visible;
-            }
-            
-            /* Ensure the table container fills the available space */
-            .data-table-wrapper {
-              width: 100%;
-            }
-            
-            /* Fix column header spacing */
-            .data-table-column-header {
-              display: flex;
-              align-items: center;
-              justify-content: space-between;
-              padding: 0 4px;
-            }
-            
-            /* Ensure sort buttons don't overlap with text */
-            .data-table-column-header button {
-              margin-left: 8px;
-              flex-shrink: 0;
-            }
-            
-            /* Ensure column titles don't get cut off */
-            .data-table-column-header span {
-              overflow: hidden;
-              text-overflow: ellipsis;
-              white-space: nowrap;
-            }
-          `}</style>
+        <div className="overflow-auto" style={{ maxHeight: "calc(100vh - 250px)" }}>
+          <DataTable 
+            columns={getColumns(tableData, mode)} 
+            data={tableData}
+          />
         </div>
+        
+        <style jsx global>{`
+          /* iOS-style table styling */
+          .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            table-layout: fixed;
+          }
+          
+          .data-table th {
+            background-color: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            font-weight: 600;
+            color: #6b7280;
+            text-align: left;
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+          }
+          
+          .data-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(229, 231, 235, 0.3);
+            transition: background-color 0.2s ease;
+            vertical-align: middle;
+            white-space: nowrap;
+          }
+          
+          .data-table tr:hover td {
+            background-color: rgba(249, 250, 251, 0.5);
+          }
+          
+          .data-table tr:last-child td {
+            border-bottom: none;
+          }
+          
+          /* Animated row appearance */
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          
+          .data-table tbody tr {
+            animation: fadeIn 0.3s ease forwards;
+            animation-delay: calc(var(--row-index, 0) * 0.03s);
+            opacity: 0;
+          }
+          
+          /* iOS-style scrollbar */
+          .overflow-auto::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+          }
+          
+          .overflow-auto::-webkit-scrollbar-track {
+            background: transparent;
+          }
+          
+          .overflow-auto::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.3);
+            border-radius: 2px;
+          }
+          
+          .overflow-auto::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.5);
+          }
+          
+          /* Fix for table container */
+          .overflow-auto {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+          }
+          
+          /* iOS-style hover effects */
+          .data-table tr {
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+          }
+          
+          .data-table tr:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            z-index: 1;
+            position: relative;
+          }
+          
+          /* Fix for table container */
+          .rounded-md.border {
+            border: none;
+            overflow: visible;
+          }
+          
+          /* Ensure the table container fills the available space */
+          .data-table-wrapper {
+            width: 100%;
+          }
+          
+          /* Fix column header spacing */
+          .data-table-column-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 4px;
+          }
+          
+          /* Ensure sort buttons don't overlap with text */
+          .data-table-column-header button {
+            margin-left: 8px;
+            flex-shrink: 0;
+          }
+          
+          /* Ensure column titles don't get cut off */
+          .data-table-column-header span {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+        `}</style>
       </div>
     )
   }
@@ -1032,8 +1033,10 @@ export default function KeywordResearch() {
   };
 
   // Function to handle loading a history item
-  const handleLoadHistory = (result: KeywordResearchResults) => {
-    loadHistory([result, ...searchHistory]);
+  const handleLoadHistory = (result: any) => {
+    // Add the result to the history directly instead of calling loadHistory with parameters
+    // The context will handle loading the history
+    addToHistory(result);
   };
 
   // Load search history from local storage on component mount
@@ -1060,13 +1063,19 @@ export default function KeywordResearch() {
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-bold text-gray-900 mb-3">
-            <span className="bg-gradient-to-r from-blue-600 to-blue-300 bg-clip-text text-transparent">Keyword Research</span>
-          </h1>
-          <p className="text-gray-500 text-lg">Discover high-value keywords and analyze search trends to optimize your content strategy.</p>
-          
-          {/* Gradient line */}
-          <div className="h-1 w-24 bg-gradient-to-r from-blue-600 to-blue-300 rounded-full mt-4 mb-8"></div>
+          <div className="flex flex-col items-center text-center mb-8">
+            <div className="flex items-center gap-3 mb-3">
+              <AnimatedTitle>Keyword Research</AnimatedTitle>
+              <Badge className="bg-gradient-to-r from-[#0071e3] to-[#40a9ff] text-white text-xs font-medium py-1 px-2 rounded-full">
+                AI Powered
+              </Badge>
+            </div>
+            <p className="text-gray-500 text-lg max-w-2xl">
+              Discover high-value keywords and analyze search trends to optimize your content strategy.
+            </p>
+            
+            {/* Gradient line removed as AnimatedTitle already provides visual hierarchy */}
+          </div>
         </motionFramer.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -1197,7 +1206,7 @@ export default function KeywordResearch() {
                     <Button 
                       onClick={handleSubmit} 
                       disabled={contextLoading || !isValid()}
-                      className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-blue-300 hover:from-blue-700 hover:to-blue-400 text-white font-medium shadow-sm transition-all hover:shadow-md"
+                      className="w-full h-11 rounded-xl bg-blue-500 hover:bg-blue-600 text-white font-medium shadow-sm transition-all hover:shadow-md"
                     >
                       {(contextLoading) ? (
                         <div className="flex items-center">

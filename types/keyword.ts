@@ -14,6 +14,8 @@ export interface Keyword {
   last_updated: string
   user_id: string
   history?: { date: string; position: number }[]
+  updated_at?: string
+  search_volume?: number
 }
 
 export interface KeywordSuggestion {
@@ -23,4 +25,3 @@ export interface KeywordSuggestion {
   competition: number
   keyword_difficulty: number
 }
-

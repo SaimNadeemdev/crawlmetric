@@ -9,10 +9,10 @@ import { lilgrotesk, fsMe, poppins, pacifico } from "@/lib/fonts"
 
 // Phrases to cycle through
 const phrases = [
-  { heading: "Search Rankings", subheading: "" },
-  { heading: "Website Traffic", subheading: "" },
-  { heading: "Keyword Position", subheading: "Monitor your progress" },
-  { heading: "SEO Performance", subheading: "Optimize your content" },
+  { heading: "Search Rankings" },
+  { heading: "Website Traffic" },
+  { heading: "Keyword Position" },
+  { heading: "SEO Performance" },
 ]
 
 // Feature tags to display
@@ -401,23 +401,6 @@ export default function HeroGeometric() {
                 </motion.div>
               </AnimatePresence>
             </h1>
-
-            {/* Animated subheading */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentPhraseIndex}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.5, delay: 1.2 }}
-                className="text-base sm:text-lg text-[#86868b] mb-10 max-w-xl mx-auto lg:mx-0 font-normal h-8"
-                style={{ 
-                  fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif'
-                }}
-              >
-                {currentPhrase.subheading}
-              </motion.div>
-            </AnimatePresence>
 
             {/* Apple-style buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">

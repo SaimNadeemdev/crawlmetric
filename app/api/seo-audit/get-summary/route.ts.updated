@@ -1,0 +1,311 @@
+import { type NextRequest, NextResponse } from "next/server"
+
+// DataForSEO API credentials - hardcoded for all users
+const API_LOGIN = "saim@makewebeasy.llc"
+const API_PASSWORD = "af0929d9a9ee7cad"
+
+// Base64 encode the credentials for Basic Auth
+const AUTH_HEADER = Buffer.from(`${API_LOGIN}:${API_PASSWORD}`).toString("base64")
+
+export async function GET(request: NextRequest) {
+  try {
+    const taskId = request.nextUrl.searchParams.get("taskId")
+
+    if (!taskId) {
+      return NextResponse.json({ error: "Task ID is required" }, { status: 400 })
+    }
+
+    // Prepare the request to DataForSEO API
+    const apiEndpoint = "https://api.dataforseo.com/v3/on_page/summary"
+    const apiBody = [
+      {
+        id: taskId,
+        limit: 1,
+      },
+    ]
+
+    console.log(`Getting summary for task ID: ${taskId}`)
+
+    // Make the request to DataForSEO API
+    const response = await fetch(apiEndpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${AUTH_HEADER}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(apiBody),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`DataForSEO API error: ${response.status} ${errorText}`)
+      return NextResponse.json({ error: `API error: ${response.status}` }, { status: response.status })
+    }
+
+    const data = await response.json()
+    
+    // Log the full response for debugging
+    console.log(`Summary response for task ${taskId}:`, JSON.stringify(data))
+    
+    // Process and enhance the response data
+    if (data.tasks && data.tasks.length > 0) {
+      const task = data.tasks[0];
+      
+      // Check if the task is still in queue
+      if (task.status_code === 40602) {
+        // Task is in queue, create a default response with task status info
+        const inQueueResponse = {
+          crawl_progress: "in_progress",
+          crawl_status: {
+            status_code: task.status_code,
+            status_message: task.status_message,
+            max_crawl_pages: task.data?.max_crawl_pages || 100,
+            pages_in_queue: 0,
+            pages_crawled: 0,
+          },
+          domain_info: {
+            name: task.data?.target || taskId.split("_")[0] || "Unknown Domain",
+          },
+          pages_crawled: 0,
+          pages_count: 0,
+          page_metrics: {
+            links_external: 0,
+            links_internal: 0,
+            duplicate_title: 0,
+            duplicate_description: 0,
+            duplicate_content: 0,
+            broken_links: 0,
+            broken_resources: 0,
+            links_relation_conflict: 0,
+            redirect_loop: 0,
+            onpage_score: 0,
+            non_indexable: 0,
+            checks: {
+              canonical: 0,
+              duplicate_meta_tags: 0,
+              no_description: 0,
+              frame: 0,
+              large_page_size: 0,
+              irrelevant_description: 0,
+              irrelevant_meta_keywords: 0,
+              is_https: 0,
+              is_http: 0,
+              title_too_long: 0,
+              low_content_rate: 0,
+              small_page_size: 0,
+              no_h1_tag: 0,
+              recursive_canonical: 0,
+              no_favicon: 0,
+              no_image_alt: 0,
+              no_image_title: 0,
+              seo_friendly_url: 0,
+              seo_friendly_url_characters_check: 0,
+              seo_friendly_url_dynamic_check: 0,
+              seo_friendly_url_keywords_check: 0,
+              seo_friendly_url_relative_length_check: 0,
+              title_too_short: 0,
+              no_content_encoding: 0,
+              high_waiting_time: 0,
+              high_loading_time: 0,
+              is_redirect: 0,
+              is_broken: 0,
+              is_4xx_code: 0,
+              is_5xx_code: 0,
+              is_www: 0,
+              no_doctype: 0,
+              no_encoding_meta_tag: 0,
+              high_content_rate: 0,
+              low_character_count: 0,
+              high_character_count: 0,
+              low_readability_rate: 0,
+              irrelevant_title: 0,
+              deprecated_html_tags: 0,
+              duplicate_title_tag: 0,
+              no_title: 0,
+              flash: 0,
+              lorem_ipsum: 0,
+              has_misspelling: 0,
+              canonical_to_broken: 0,
+              canonical_to_redirect: 0,
+              has_links_to_redirects: 0,
+              is_orphan_page: 0,
+              has_meta_refresh_redirect: 0,
+              meta_charset_consistency: 0,
+              size_greater_than_3mb: 0,
+              has_html_doctype: 0,
+              https_to_http_links: 0,
+              has_render_blocking_resources: 0,
+              redirect_chain: 0,
+              canonical_chain: 0,
+              is_link_relation_conflict: 0
+            }
+          },
+          // Add content metrics section
+          content_metrics: {
+            pages_with_title: 0,
+            pages_with_meta_description: 0,
+            pages_with_h1: 0,
+            pages_with_images: 0,
+            pages_with_structured_data: 0
+          },
+          // Add health score
+          health_score: 0,
+          // Add task status information
+          task_status: {
+            id: task.id,
+            status_code: task.status_code,
+            status_message: task.status_message
+          }
+        };
+        
+        return NextResponse.json(inQueueResponse);
+      }
+      
+      // If we have results, process them
+      if (task.result && task.result.length > 0) {
+        const result = task.result[0];
+        
+        // Calculate a health score based on the onpage_score if available
+        const healthScore = result.page_metrics?.onpage_score || 0;
+        
+        // Add content metrics based on the checks data
+        const contentMetrics = {
+          pages_with_title: result.page_metrics?.checks?.no_title ? 
+            (result.domain_info?.total_pages || 0) - result.page_metrics.checks.no_title : 
+            (result.domain_info?.total_pages || 0),
+          pages_with_meta_description: result.page_metrics?.checks?.no_description ? 
+            (result.domain_info?.total_pages || 0) - result.page_metrics.checks.no_description : 
+            (result.domain_info?.total_pages || 0),
+          pages_with_h1: result.page_metrics?.checks?.no_h1_tag ? 
+            (result.domain_info?.total_pages || 0) - result.page_metrics.checks.no_h1_tag : 
+            (result.domain_info?.total_pages || 0),
+          pages_with_images: result.page_metrics?.checks?.no_image_alt !== undefined ? 
+            (result.domain_info?.total_pages || 0) - result.page_metrics.checks.no_image_alt : 
+            0,
+          pages_with_structured_data: 0 // This might not be directly available in the API response
+        };
+        
+        // Enhance the result with additional data
+        const enhancedResult = {
+          ...result,
+          health_score: healthScore,
+          content_metrics: contentMetrics,
+          task_status: {
+            id: task.id,
+            status_code: task.status_code,
+            status_message: task.status_message
+          }
+        };
+        
+        return NextResponse.json(enhancedResult);
+      }
+    }
+    
+    // Fallback response if no valid data is found
+    const defaultResult = {
+      crawl_progress: "in_progress",
+      crawl_status: {
+        status_code: 2,
+        status_message: "In progress",
+        max_crawl_pages: 0,
+        pages_in_queue: 0,
+        pages_crawled: 0,
+      },
+      domain_info: {
+        name: taskId.split("_")[0] || "Unknown Domain",
+      },
+      pages_crawled: 0,
+      pages_count: 0,
+      page_metrics: {
+        links_external: 0,
+        links_internal: 0,
+        duplicate_title: 0,
+        duplicate_description: 0,
+        duplicate_content: 0,
+        broken_links: 0,
+        broken_resources: 0,
+        links_relation_conflict: 0,
+        redirect_loop: 0,
+        onpage_score: 0,
+        non_indexable: 0,
+        checks: {
+          canonical: 0,
+          duplicate_meta_tags: 0,
+          no_description: 0,
+          frame: 0,
+          large_page_size: 0,
+          irrelevant_description: 0,
+          irrelevant_meta_keywords: 0,
+          is_https: 0,
+          is_http: 0,
+          title_too_long: 0,
+          low_content_rate: 0,
+          small_page_size: 0,
+          no_h1_tag: 0,
+          recursive_canonical: 0,
+          no_favicon: 0,
+          no_image_alt: 0,
+          no_image_title: 0,
+          seo_friendly_url: 0,
+          seo_friendly_url_characters_check: 0,
+          seo_friendly_url_dynamic_check: 0,
+          seo_friendly_url_keywords_check: 0,
+          seo_friendly_url_relative_length_check: 0,
+          title_too_short: 0,
+          no_content_encoding: 0,
+          high_waiting_time: 0,
+          high_loading_time: 0,
+          is_redirect: 0,
+          is_broken: 0,
+          is_4xx_code: 0,
+          is_5xx_code: 0,
+          is_www: 0,
+          no_doctype: 0,
+          no_encoding_meta_tag: 0,
+          high_content_rate: 0,
+          low_character_count: 0,
+          high_character_count: 0,
+          low_readability_rate: 0,
+          irrelevant_title: 0,
+          deprecated_html_tags: 0,
+          duplicate_title_tag: 0,
+          no_title: 0,
+          flash: 0,
+          lorem_ipsum: 0,
+          has_misspelling: 0,
+          canonical_to_broken: 0,
+          canonical_to_redirect: 0,
+          has_links_to_redirects: 0,
+          is_orphan_page: 0,
+          has_meta_refresh_redirect: 0,
+          meta_charset_consistency: 0,
+          size_greater_than_3mb: 0,
+          has_html_doctype: 0,
+          https_to_http_links: 0,
+          has_render_blocking_resources: 0,
+          redirect_chain: 0,
+          canonical_chain: 0,
+          is_link_relation_conflict: 0
+        }
+      },
+      content_metrics: {
+        pages_with_title: 0,
+        pages_with_meta_description: 0,
+        pages_with_h1: 0,
+        pages_with_images: 0,
+        pages_with_structured_data: 0
+      },
+      health_score: 0,
+      task_status: {
+        id: taskId,
+        status_code: 0,
+        status_message: "Unknown"
+      }
+    };
+    
+    return NextResponse.json(defaultResult);
+  } catch (error) {
+    console.error("Error getting task summary:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+  }
+}

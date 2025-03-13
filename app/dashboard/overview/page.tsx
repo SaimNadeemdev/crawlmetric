@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useToast } from "@/components/ui/use-toast"
-import { Loader2, RefreshCw, ArrowUp, ArrowDown, Minus, FileDown, ShieldAlert } from "lucide-react"
+import { Loader2, RefreshCw, ArrowUp, ArrowDown, Minus, FileDown, ShieldAlert, ListFilter, ArrowLeft } from "lucide-react"
 import { fetchKeywords, refreshKeywordRankings } from "@/lib/api"
 import { generatePdfReport } from "@/lib/pdf-report"
 import type { Keyword } from "@/types/keyword"
@@ -14,7 +14,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { createClient } from "@supabase/supabase-js"
-import DashboardLayout from "@/app/dashboard-layout"
+import { motion } from "framer-motion"
+import { AnimatedTitle } from "@/components/client-success-section"
+import { useRef } from "react"
 
 // Initialize Supabase client with hardcoded credentials for client-side use
 const supabaseUrl = 'https://nzxgnnpthtefahosnolm.supabase.co'
@@ -43,45 +45,100 @@ export default function OverviewPage() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc")
   const [domainFilter, setDomainFilter] = useState<string>("all")
   const [user, setUser] = useState<any>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+
+  // Animated dotted background
+  useEffect(() => {
+    if (!canvasRef.current) return
+    
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    
+    let animationFrameId: number
+    
+    const resizeCanvas = () => {
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
+    }
+    
+    const drawDottedBackground = (t: number) => {
+      if (!ctx) return
+      
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      
+      const spacing = 30
+      const dotSize = 1
+      const rows = Math.ceil(canvas.height / spacing)
+      const cols = Math.ceil(canvas.width / spacing)
+      
+      for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+          const x = j * spacing
+          const y = i * spacing
+          
+          // Add subtle movement to dots
+          const offsetX = Math.sin((i + j) * 0.5 + t * 0.001) * 2
+          const offsetY = Math.cos((i - j) * 0.5 + t * 0.001) * 2
+          
+          // Vary dot size slightly based on position and time
+          const size = dotSize + Math.sin(i * j + t * 0.0005) * 0.3
+          
+          ctx.beginPath()
+          ctx.arc(x + offsetX, y + offsetY, size, 0, Math.PI * 2)
+          ctx.fillStyle = "rgba(0, 0, 0, 0.05)"
+          ctx.fill()
+        }
+      }
+    }
+    
+    let time = 0
+    const animate = () => {
+      time += 1
+      drawDottedBackground(time)
+      animationFrameId = requestAnimationFrame(animate)
+    }
+    
+    window.addEventListener("resize", resizeCanvas)
+    resizeCanvas()
+    animate()
+    
+    return () => {
+      window.removeEventListener("resize", resizeCanvas)
+      cancelAnimationFrame(animationFrameId)
+    }
+  }, [])
 
   // Check for session
   useEffect(() => {
     const getUser = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser()
-        
-        if (user) {
-          setUser(user)
-        } else {
-          router.push('/login')
-        }
+        setUser(user)
       } catch (error) {
-        console.error("Error getting user:", error)
-        router.push('/login')
+        console.error("Error fetching user:", error)
       }
     }
-    
-    getUser()
-  }, [router])
 
+    getUser()
+  }, [])
+
+  // Load keywords on mount
   useEffect(() => {
     const loadKeywords = async () => {
-      if (user) {
-        try {
-          setIsLoading(true)
-          const data = await fetchKeywords()
-          setKeywords(data)
-          setFilteredKeywords(data)
-        } catch (error) {
-          console.error("Error loading keywords:", error)
-          toast({
-            title: "Error loading keywords",
-            description: "There was an error loading your keywords. Please try again.",
-            variant: "destructive",
-          })
-        } finally {
-          setIsLoading(false)
-        }
+      try {
+        const data = await fetchKeywords()
+        setKeywords(data)
+        setFilteredKeywords(data)
+      } catch (error) {
+        console.error("Error loading keywords:", error)
+        toast({
+          title: "Error loading keywords",
+          description: "There was an error loading your keywords. Please try again.",
+          variant: "destructive",
+        })
+      } finally {
+        setIsLoading(false)
       }
     }
 
@@ -90,8 +147,8 @@ export default function OverviewPage() {
     }
   }, [user, toast])
 
+  // Filter and sort keywords when dependencies change
   useEffect(() => {
-    // Filter and sort keywords whenever dependencies change
     let result = [...keywords]
 
     // Apply search filter
@@ -219,62 +276,77 @@ export default function OverviewPage() {
   }
 
   return (
-    <DashboardLayout>
-      <div className="container mx-auto p-4 space-y-6 apple-scrollbar">
-        <div className="flex flex-col space-y-2">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-medium tracking-tight text-white apple-heading">Keywords Overview</h1>
-            <div className="flex items-center space-x-2">
+    <div className="relative min-h-screen bg-white">
+      {/* Animated dotted background */}
+      <canvas ref={canvasRef} className="fixed inset-0 h-full w-full" />
+      
+      {/* Main content with responsive width */}
+      <div className="relative z-10 w-full max-w-[2000px] mx-auto px-6 sm:px-8 lg:px-12 py-12 pt-20">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+          className="mb-12 text-center"
+        >
+          <div className="flex items-center justify-center mb-3">
+            <AnimatedTitle>Keywords Overview</AnimatedTitle>
+          </div>
+          <p className="text-gray-500 text-lg">View and manage all your tracked keywords across different domains.</p>
+          
+          <div className="flex items-center justify-center space-x-2 mt-6">
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
               <Button
                 variant="outline"
-                size="sm"
                 onClick={handleRefreshKeywords}
                 disabled={isRefreshing}
-                className="apple-button-secondary rounded-xl"
+                className="h-10 px-4 rounded-lg border-[#d2d2d7] bg-white text-gray-700 hover:bg-gray-50 transition-all"
               >
                 {isRefreshing ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Refreshing...
+                    <span>Refreshing...</span>
                   </>
                 ) : (
                   <>
                     <RefreshCw className="mr-2 h-4 w-4" />
-                    Refresh All
+                    <span>Refresh All</span>
                   </>
                 )}
               </Button>
+            </motion.div>
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
               <Button
                 variant="outline"
-                size="sm"
                 onClick={handleExportPdf}
                 disabled={isExporting || keywords.length === 0}
-                className="apple-button-secondary rounded-xl"
+                className="h-10 px-4 rounded-lg border-[#d2d2d7] bg-white text-gray-700 hover:bg-gray-50 transition-all"
               >
                 {isExporting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Exporting...
+                    <span>Exporting...</span>
                   </>
                 ) : (
                   <>
                     <FileDown className="mr-2 h-4 w-4" />
-                    Export PDF
+                    <span>Export PDF</span>
                   </>
                 )}
               </Button>
-            </div>
+            </motion.div>
           </div>
-          
-          <p className="text-gray-400 text-sm apple-text">
-            View and manage all your tracked keywords across different domains.
-          </p>
-        </div>
+        </motion.div>
 
-        <Card className="apple-card border border-white/5 bg-black/40 backdrop-blur-md rounded-xl shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-xl font-medium tracking-tight apple-heading">Keywords List</CardTitle>
-            <CardDescription className="text-gray-400 apple-subheading">
+        <Card className="border border-gray-100 bg-white/50 backdrop-blur-xl rounded-[22px] shadow-sm overflow-hidden">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-xl font-medium tracking-tight">Keywords List</CardTitle>
+            <CardDescription className="text-gray-500">
               {filteredKeywords.length} keywords tracked across {uniqueDomains.length} domains
             </CardDescription>
           </CardHeader>
@@ -286,15 +358,15 @@ export default function OverviewPage() {
                     placeholder="Search keywords or domains..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-black/20 border-white/10 text-white placeholder:text-gray-500 rounded-xl"
+                    className="bg-white/80 border-gray-200 text-gray-900 placeholder:text-gray-500 rounded-xl"
                   />
                 </div>
                 <div className="flex gap-2">
                   <Select value={domainFilter} onValueChange={setDomainFilter}>
-                    <SelectTrigger className="w-[180px] bg-black/20 border-white/10 text-white rounded-xl">
+                    <SelectTrigger className="w-[180px] bg-white/80 border-gray-200 text-gray-900 rounded-xl">
                       <SelectValue placeholder="Filter by domain" />
                     </SelectTrigger>
-                    <SelectContent className="bg-black/90 border-white/10 text-white backdrop-blur-xl">
+                    <SelectContent className="bg-white border-gray-200 text-gray-900 backdrop-blur-xl rounded-xl">
                       <SelectItem value="all">All Domains</SelectItem>
                       {uniqueDomains.map((domain) => (
                         <SelectItem key={domain} value={domain}>
@@ -304,10 +376,10 @@ export default function OverviewPage() {
                     </SelectContent>
                   </Select>
                   <Select value={sortBy} onValueChange={setSortBy}>
-                    <SelectTrigger className="w-[180px] bg-black/20 border-white/10 text-white rounded-xl">
+                    <SelectTrigger className="w-[180px] bg-white/80 border-gray-200 text-gray-900 rounded-xl">
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
-                    <SelectContent className="bg-black/90 border-white/10 text-white backdrop-blur-xl">
+                    <SelectContent className="bg-white border-gray-200 text-gray-900 backdrop-blur-xl rounded-xl">
                       <SelectItem value="keyword">Keyword</SelectItem>
                       <SelectItem value="domain">Domain</SelectItem>
                       <SelectItem value="rank">Current Rank</SelectItem>
@@ -318,7 +390,7 @@ export default function OverviewPage() {
                     variant="ghost"
                     size="icon"
                     onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
-                    className="h-10 w-10 rounded-xl bg-black/20 border border-white/10 text-white hover:bg-white/10"
+                    className="h-10 w-10 rounded-xl bg-white/80 border border-gray-200 text-gray-700 hover:bg-gray-50"
                   >
                     {sortOrder === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />}
                   </Button>
@@ -327,28 +399,28 @@ export default function OverviewPage() {
 
               {isLoading ? (
                 <div className="flex justify-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
+                  <Loader2 className="h-8 w-8 animate-spin text-[#0071e3]" />
                 </div>
               ) : filteredKeywords.length === 0 ? (
-                <div className="text-center py-8 border border-dashed border-white/10 rounded-xl bg-black/20 backdrop-blur-md">
-                  <p className="text-gray-400 apple-text">No keywords found matching your criteria.</p>
+                <div className="text-center py-8 border border-dashed border-gray-200 rounded-xl bg-white/50 backdrop-blur-md">
+                  <p className="text-gray-500">No keywords found matching your criteria.</p>
                   <Link href="/dashboard/main">
-                    <Button className="mt-4 apple-button-secondary rounded-xl">
+                    <Button className="mt-4 h-10 px-4 rounded-lg bg-[#0071e3] hover:bg-[#0062c4] text-white font-medium shadow-sm transition-all hover:shadow-md">
                       Add New Keywords
                     </Button>
                   </Link>
                 </div>
               ) : (
-                <div className="rounded-xl border border-white/5 overflow-hidden">
+                <div className="rounded-xl border border-gray-200 overflow-hidden">
                   <Table className="w-full">
-                    <TableHeader className="bg-black/30 backdrop-blur-md">
-                      <TableRow className="border-white/5 hover:bg-white/5">
-                        <TableHead className="text-gray-400 w-1/3">Keyword</TableHead>
-                        <TableHead className="text-gray-400">Domain</TableHead>
-                        <TableHead className="text-gray-400 text-right">Current Rank</TableHead>
-                        <TableHead className="text-gray-400 text-right">Previous Rank</TableHead>
-                        <TableHead className="text-gray-400 text-right">Change</TableHead>
-                        <TableHead className="text-gray-400 text-right">Last Updated</TableHead>
+                    <TableHeader className="bg-gray-50">
+                      <TableRow className="border-gray-200 hover:bg-gray-100">
+                        <TableHead className="text-gray-500 w-1/3">Keyword</TableHead>
+                        <TableHead className="text-gray-500">Domain</TableHead>
+                        <TableHead className="text-gray-500 text-right">Current Rank</TableHead>
+                        <TableHead className="text-gray-500 text-right">Previous Rank</TableHead>
+                        <TableHead className="text-gray-500 text-right">Change</TableHead>
+                        <TableHead className="text-gray-500 text-right">Last Updated</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -360,35 +432,35 @@ export default function OverviewPage() {
                         return (
                           <TableRow 
                             key={keyword.id} 
-                            className="border-white/5 hover:bg-white/5 transition-colors"
+                            className="border-gray-200 hover:bg-gray-50 transition-colors"
                           >
-                            <TableCell className="font-medium text-white">
+                            <TableCell className="font-medium text-gray-900">
                               <Link 
                                 href={`/dashboard/main?keyword=${keyword.id}`}
-                                className="hover:text-blue-400 transition-colors"
+                                className="hover:text-[#0071e3] transition-colors"
                               >
                                 {keyword.keyword}
                               </Link>
                             </TableCell>
-                            <TableCell className="text-gray-300">{keyword.domain}</TableCell>
+                            <TableCell className="text-gray-600">{keyword.domain}</TableCell>
                             <TableCell className="text-right font-medium">
                               {keyword.current_rank ? (
-                                <span className="text-white">{keyword.current_rank}</span>
+                                <span className="text-gray-900">{keyword.current_rank}</span>
                               ) : (
-                                <span className="text-gray-500">Not ranking</span>
+                                <span className="text-gray-400">Not ranking</span>
                               )}
                             </TableCell>
-                            <TableCell className="text-right text-gray-300">
-                              {keyword.previous_rank || <span className="text-gray-500">-</span>}
+                            <TableCell className="text-right text-gray-600">
+                              {keyword.previous_rank || <span className="text-gray-400">-</span>}
                             </TableCell>
                             <TableCell className="text-right">
                               {rankChange > 0 ? (
-                                <span className="text-green-400 flex items-center justify-end">
+                                <span className="text-green-600 flex items-center justify-end">
                                   <ArrowUp className="h-4 w-4 mr-1" />
                                   {rankChange}
                                 </span>
                               ) : rankChange < 0 ? (
-                                <span className="text-red-400 flex items-center justify-end">
+                                <span className="text-red-600 flex items-center justify-end">
                                   <ArrowDown className="h-4 w-4 mr-1" />
                                   {Math.abs(rankChange)}
                                 </span>
@@ -399,7 +471,7 @@ export default function OverviewPage() {
                                 </span>
                               )}
                             </TableCell>
-                            <TableCell className="text-right text-gray-300">
+                            <TableCell className="text-right text-gray-600">
                               {new Date(keyword.last_updated).toLocaleDateString()}
                             </TableCell>
                           </TableRow>
@@ -413,6 +485,6 @@ export default function OverviewPage() {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+    </div>
   )
 }

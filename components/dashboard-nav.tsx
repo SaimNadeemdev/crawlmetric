@@ -14,7 +14,7 @@ const DashboardNav = () => {
           <Link href="/dashboard/settings">Settings</Link>
         </li>
         <li>
-          <Link href="/dashboard/seo-audit">SEO Audit</Link>
+          <Link href="/seo-audit">SEO Audit</Link>
         </li>
         {/* Add more links as needed */}
       </ul>

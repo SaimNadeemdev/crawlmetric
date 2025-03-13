@@ -755,11 +755,11 @@ export default function KeywordTrackerPage() {
               <Search className="h-8 w-8 text-[#0071e3]" />
             </div>
             <h2 className="text-2xl font-medium text-gray-900 mb-2">
-              <span className="bg-gradient-to-r from-blue-600 to-blue-300 bg-clip-text text-transparent">Authentication Required</span>
+              <span className="text-[#0071e3]">Authentication Required</span>
             </h2>
             <p className="text-gray-500 mb-6">You need to be logged in to access the keyword tracker.</p>
             <Button 
-              className="bg-[#0071e3] hover:bg-[#0077ED] text-white font-medium rounded-lg h-11 px-6 shadow-sm transition-all hover:shadow-md"
+              className="bg-[#0071e3] hover:bg-[#0062c4] text-white font-medium rounded-lg h-11 px-6 shadow-sm transition-all hover:shadow-md"
               onClick={() => router.push('/login')}
             >
               Go to Login
@@ -782,17 +782,14 @@ export default function KeywordTrackerPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-          className="mb-12"
+          className="mb-12 text-center"
         >
-          <h1 className="text-3xl font-bold text-gray-900 mb-3">
-            <span className="bg-gradient-to-r from-blue-600 to-blue-300 bg-clip-text text-transparent">Keyword Tracker</span>
-          </h1>
+          <div className="flex items-center justify-center mb-3">
+            <AnimatedTitle>Keyword Tracker</AnimatedTitle>
+          </div>
           <p className="text-gray-500 text-lg">Monitor your website's ranking for important keywords and track performance over time.</p>
           
-          {/* Gradient line */}
-          <div className="h-1 w-24 bg-gradient-to-r from-blue-600 to-blue-300 rounded-full mt-4 mb-8"></div>
-          
-          <div className="flex space-x-3">
+          <div className="flex items-center justify-center space-x-3 mt-6">
             <motion.div
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
@@ -817,6 +814,21 @@ export default function KeywordTrackerPage() {
               </Button>
             </motion.div>
             
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="mr-2"
+            >
+              <Button
+                variant="outline"
+                onClick={() => router.push('/dashboard/overview')}
+                className="h-10 px-4 rounded-lg border-[#d2d2d7] bg-white text-gray-700 hover:bg-gray-50 transition-all"
+              >
+                <ArrowRight className="mr-2 h-4 w-4" />
+                <span>Keywords Overview</span>
+              </Button>
+            </motion.div>
+            
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <motion.div
@@ -824,7 +836,7 @@ export default function KeywordTrackerPage() {
                   whileTap={{ scale: 0.98 }}
                 >
                   <Button
-                    className="h-10 px-4 rounded-lg bg-gradient-to-r from-blue-600 to-blue-300 hover:from-blue-700 hover:to-blue-400 text-white font-medium shadow-sm transition-all hover:shadow-md"
+                    className="h-10 px-4 rounded-lg bg-[#0071e3] hover:bg-[#0062c4] text-white font-medium shadow-sm transition-all hover:shadow-md"
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     Add Keyword
@@ -840,12 +852,12 @@ export default function KeywordTrackerPage() {
                   <div className="relative z-10 p-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center">
-                        <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-600 to-blue-300 flex items-center justify-center mr-4">
-                          <Search className="h-6 w-6 text-blue-600" />
+                        <div className="h-12 w-12 rounded-xl bg-[#0071e3]/10 flex items-center justify-center mr-4">
+                          <Search className="h-6 w-6 text-[#0071e3]" />
                         </div>
                         <div>
                           <h2 className="text-xl font-medium text-gray-900">
-                            <span className="bg-gradient-to-r from-blue-600 to-blue-300 bg-clip-text text-transparent">Add New Keyword</span>
+                            <span className="text-[#0071e3]">Add New Keyword</span>
                           </h2>
                           <p className="text-gray-500">
                             Track a new keyword for your website
@@ -903,7 +915,7 @@ export default function KeywordTrackerPage() {
                     <Search className="h-10 w-10 text-[#0071e3]" />
                   </div>
                   <h3 className="text-xl font-medium text-gray-900 mb-2">
-                    <span className="bg-gradient-to-r from-blue-600 to-blue-300 bg-clip-text text-transparent">No keywords tracked yet</span>
+                    <span className="text-[#0071e3]">No keywords tracked yet</span>
                   </h3>
                   <p className="text-gray-500 mb-6 max-w-md">Start tracking your first keyword to monitor its ranking position over time</p>
                   <motion.div
@@ -912,7 +924,7 @@ export default function KeywordTrackerPage() {
                   >
                     <Button
                       onClick={() => setIsDialogOpen(true)}
-                      className="h-11 px-6 rounded-lg bg-[#0071e3] hover:bg-[#0077ED] text-white font-medium shadow-sm transition-all hover:shadow-md"
+                      className="h-11 px-6 rounded-lg bg-[#0071e3] hover:bg-[#0062c4] text-white font-medium shadow-sm transition-all hover:shadow-md"
                     >
                       <Plus className="mr-2 h-4 w-4" />
                       Add Your First Keyword
@@ -922,16 +934,16 @@ export default function KeywordTrackerPage() {
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   <Card className="lg:col-span-1 border border-gray-100 bg-white rounded-2xl shadow-sm transition-all duration-300 hover:shadow-md">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 to-blue-300"></div>
+                    <div className="absolute top-0 left-0 w-full h-1 bg-[#0071e3]"></div>
                     <CardHeader className="pb-3 border-b border-gray-100">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h2 className="text-2xl font-bold text-gray-900 mb-1">
-                            <span className="bg-gradient-to-r from-blue-600 to-blue-300 bg-clip-text text-transparent">Your Keywords</span>
+                          <h2 className="text-2xl font-bold mb-1">
+                            <span className="text-[#0071e3]">Your Keywords</span>
                           </h2>
                           <CardDescription className="text-gray-500">Manage and track your keywords</CardDescription>
                         </div>
-                        <Badge className="bg-gradient-to-r from-blue-600 to-blue-300 text-white border-0 hover:from-blue-700 hover:to-blue-400">
+                        <Badge className="bg-[#0071e3] text-white border-0 hover:bg-[#0062c4]">
                           {keywords.length}
                         </Badge>
                       </div>
@@ -980,12 +992,12 @@ export default function KeywordTrackerPage() {
                   </Card>
 
                   <Card className="lg:col-span-2 border border-gray-100 bg-white rounded-2xl shadow-sm transition-all duration-300 hover:shadow-md">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 to-blue-300"></div>
+                    <div className="absolute top-0 left-0 w-full h-1 bg-[#0071e3]"></div>
                     <CardHeader className="pb-3 border-b border-gray-100">
                       <div className="flex items-center justify-between">
                         <div>
                           <h2 className="text-2xl font-bold mb-1">
-                            <span className="bg-gradient-to-r from-blue-600 to-blue-300 bg-clip-text text-transparent">{selectedKeyword?.keyword}</span>
+                            <span className="text-[#0071e3]">{selectedKeyword?.keyword}</span>
                           </h2>
                           <CardDescription className="text-gray-500">Detailed information for this keyword</CardDescription>
                         </div>
@@ -1058,14 +1070,14 @@ export default function KeywordTrackerPage() {
 
                               <div className="mt-6">
                                 <h3 className="text-lg font-medium mb-4">
-                                  <span className="bg-gradient-to-r from-blue-600 to-blue-300 bg-clip-text text-transparent">Keyword Details</span>
+                                  <span className="text-[#0071e3]">Keyword Details</span>
                                 </h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                   <Card className="bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 relative">
-                                    <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-blue-600 to-blue-300"></div>
+                                    <div className="absolute top-0 left-0 w-full h-0.5 bg-[#0071e3]"></div>
                                     <CardHeader className="pb-2">
                                       <h4 className="text-md font-medium">
-                                        <span className="bg-gradient-to-r from-blue-600 to-blue-300 bg-clip-text text-transparent">Basic Information</span>
+                                        <span className="text-[#0071e3]">Basic Information</span>
                                       </h4>
                                     </CardHeader>
                                     <CardContent className="space-y-3">
@@ -1091,10 +1103,10 @@ export default function KeywordTrackerPage() {
                                   </Card>
 
                                   <Card className="bg-white border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-all duration-300 relative">
-                                    <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-blue-600 to-blue-300"></div>
+                                    <div className="absolute top-0 left-0 w-full h-0.5 bg-[#0071e3]"></div>
                                     <CardHeader className="pb-2">
                                       <h4 className="text-md font-medium">
-                                        <span className="bg-gradient-to-r from-blue-600 to-blue-300 bg-clip-text text-transparent">Performance Metrics</span>
+                                        <span className="text-[#0071e3]">Performance Metrics</span>
                                       </h4>
                                     </CardHeader>
                                     <CardContent className="space-y-3">
@@ -1120,10 +1132,10 @@ export default function KeywordTrackerPage() {
                                   </Card>
                                   
                                   <Card className="border border-gray-100 bg-white rounded-xl shadow-sm transition-all duration-300 hover:shadow-md relative">
-                                    <div className="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-blue-600 to-blue-300"></div>
+                                    <div className="absolute top-0 left-0 w-full h-0.5 bg-[#0071e3]"></div>
                                     <CardHeader className="pb-2">
                                       <h4 className="text-md font-medium">
-                                        <span className="bg-gradient-to-r from-blue-600 to-blue-300 bg-clip-text text-transparent">Tracking Information</span>
+                                        <span className="text-[#0071e3]">Tracking Information</span>
                                       </h4>
                                     </CardHeader>
                                     <CardContent className="space-y-3">

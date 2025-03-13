@@ -258,7 +258,7 @@ export function isDataForSeoConfigured(): boolean {
 export function getDataForSeoCredentials() {
   // Return hardcoded DataForSEO API credentials
   return {
-    login: "saim@makewebeasy.llc",
+    username: "saim@makewebeasy.llc",
     password: "af0929d9a9ee7cad"
   }
 }

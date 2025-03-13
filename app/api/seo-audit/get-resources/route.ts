@@ -59,8 +59,8 @@ export async function GET(request: Request) {
     console.log(`[get-resources] Request body: ${JSON.stringify([requestBody])}`);
 
     // Get credentials
-    const { login, password } = getDataForSeoCredentials();
-    const credentials = Buffer.from(`${login}:${password}`).toString("base64");
+    const { username, password } = getDataForSeoCredentials();
+    const credentials = Buffer.from(`${username}:${password}`).toString("base64");
 
     // Make API request
     const response = await fetch("https://api.dataforseo.com/v3/on_page/resources", {

@@ -182,3 +182,25 @@ export interface LighthouseData {
   // ... other lighthouse data
 }
 
+export interface ResourceData {
+  resource_type: string
+  url: string
+  size: number
+  encoded_size: number
+  total_transfer_size: number
+  status_code: number
+  media_type: string
+  content_encoding: string | null
+  meta?: {
+    alternative_text?: string
+    title?: string
+    original_width?: number
+    original_height?: number
+    width?: number
+    height?: number
+  }
+  checks: {
+    no_content_encoding?: boolean
+    [key: string]: boolean | undefined
+  }
+}

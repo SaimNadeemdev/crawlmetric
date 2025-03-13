@@ -1,0 +1,346 @@
+import { getBaseUrl } from "./utils"
+
+// Function to start a full site audit
+export async function startFullSiteAudit(target: string, options: any = {}) {
+  try {
+    const baseUrl = getBaseUrl()
+    console.log(`Starting full site audit for: ${target}`)
+    console.log(`With options:`, options)
+
+    const requestBody = {
+      target,
+      max_crawl_pages: options.max_crawl_pages || 100,
+      max_crawl_depth: options.max_crawl_depth || 3,
+    }
+
+    const response = await fetch(`${baseUrl}/api/seo-audit/start-site-audit`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Error starting site audit: ${response.status}`, errorText)
+      throw new Error(`Error starting site audit: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("Site audit started:", data)
+
+    return data
+  } catch (error) {
+    console.error("Error starting site audit:", error)
+    throw error
+  }
+}
+
+// Function to check task status
+export async function checkTaskStatus(taskId: string) {
+  try {
+    const baseUrl = getBaseUrl()
+    console.log(`Checking status for task ID: ${taskId}`)
+    const response = await fetch(`${baseUrl}/api/seo-audit/check-task-status?taskId=${encodeURIComponent(taskId)}`)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Error checking task status: ${response.status}`, errorText)
+      throw new Error(`Error checking task status: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("Task status:", data)
+
+    return data
+  } catch (error) {
+    console.error("Error checking task status:", error)
+    throw error
+  }
+}
+
+// Function to get pages data
+export async function getTaskPages(taskId: string, limit: number = 100, offset: number = 0, maxPages: number = 100) {
+  try {
+    const baseUrl = getBaseUrl()
+    console.log(`Getting pages for task ID: ${taskId}, limit: ${limit}, offset: ${offset}, maxPages: ${maxPages}`)
+    
+    // Add query parameters for limit, offset, and maxPages
+    const url = `${baseUrl}/api/seo-audit/get-pages?taskId=${encodeURIComponent(taskId)}&limit=${limit}&offset=${offset}&maxPages=${maxPages}`
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Error getting task pages: ${response.status}`, errorText)
+      throw new Error(`Error getting task pages: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("Task pages response:", JSON.stringify(data).substring(0, 500) + "...")
+
+    // Handle the new response format
+    if (data.status === "success" && data.items) {
+      console.log(`Received ${data.items_count} pages out of ${data.total_items_count} total`)
+      return data.items
+    }
+    
+    // Handle the old response format for backward compatibility
+    if (data.tasks && data.tasks.length > 0 && data.tasks[0].result && data.tasks[0].result.length > 0) {
+      // Check if there's an items array in the result
+      const result = data.tasks[0].result[0];
+      if (result.items && Array.isArray(result.items)) {
+        console.log(`Extracted ${result.items.length} pages from API response`)
+        return result.items;
+      }
+      
+      // Fall back to the old format if needed
+      console.log("Extracted pages result (old format):", JSON.stringify(data.tasks[0].result).substring(0, 500) + "...")
+      return data.tasks[0].result
+    }
+
+    console.log("No valid pages data found in the response")
+    return []
+  } catch (error) {
+    console.error("Error getting task pages:", error)
+    return []
+  }
+}
+
+// Function to get duplicate tags data
+export async function getTaskDuplicateTags(taskId: string) {
+  try {
+    const baseUrl = getBaseUrl()
+    console.log(`Getting duplicate tags for task ID: ${taskId}`)
+    const response = await fetch(`${baseUrl}/api/seo-audit/get-duplicate-tags?taskId=${encodeURIComponent(taskId)}`)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Error getting duplicate tags: ${response.status}`, errorText)
+      throw new Error(`Error getting duplicate tags: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("Duplicate tags response:", JSON.stringify(data).substring(0, 500) + "...")
+
+    // Extract the result from the response
+    if (data.tasks && data.tasks.length > 0 && data.tasks[0].result) {
+      return data.tasks[0].result
+    }
+
+    return []
+  } catch (error) {
+    console.error("Error getting duplicate tags:", error)
+    return []
+  }
+}
+
+// Function to get links data
+export async function getTaskLinks(taskId: string) {
+  try {
+    const baseUrl = getBaseUrl()
+    console.log(`Getting links for task ID: ${taskId}`)
+    const response = await fetch(`${baseUrl}/api/seo-audit/get-links?taskId=${encodeURIComponent(taskId)}`)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Error getting links: ${response.status}`, errorText)
+      throw new Error(`Error getting links: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("Links response:", JSON.stringify(data).substring(0, 500) + "...")
+
+    // Extract the result from the response
+    if (data.tasks && data.tasks.length > 0 && data.tasks[0].result) {
+      return data.tasks[0].result
+    }
+
+    return []
+  } catch (error) {
+    console.error("Error getting links:", error)
+    return []
+  }
+}
+
+// Function to get non-indexable pages data
+export async function getTaskNonIndexable(taskId: string) {
+  try {
+    const baseUrl = getBaseUrl()
+    console.log(`Getting non-indexable pages for task ID: ${taskId}`)
+    const response = await fetch(`${baseUrl}/api/seo-audit/get-non-indexable?taskId=${encodeURIComponent(taskId)}`)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Error getting non-indexable pages: ${response.status}`, errorText)
+      throw new Error(`Error getting non-indexable pages: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("Non-indexable pages response:", JSON.stringify(data).substring(0, 500) + "...")
+
+    // Extract the result from the response
+    if (data.tasks && data.tasks.length > 0 && data.tasks[0].result) {
+      return data.tasks[0].result
+    }
+
+    return []
+  } catch (error) {
+    console.error("Error getting non-indexable pages:", error)
+    return []
+  }
+}
+
+// Function to get duplicate content data
+export async function getTaskDuplicateContent(taskId: string) {
+  try {
+    const baseUrl = getBaseUrl()
+    console.log(`Getting duplicate content for task ID: ${taskId}`)
+    const response = await fetch(`${baseUrl}/api/seo-audit/get-duplicate-content?taskId=${encodeURIComponent(taskId)}`)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Error getting duplicate content: ${response.status}`, errorText)
+      throw new Error(`Error getting duplicate content: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("Duplicate content response:", JSON.stringify(data).substring(0, 500) + "...")
+
+    // Extract the result from the response
+    if (data.tasks && data.tasks.length > 0 && data.tasks[0].result) {
+      return data.tasks[0].result
+    }
+
+    return []
+  } catch (error) {
+    console.error("Error getting duplicate content:", error)
+    return []
+  }
+}
+
+// Function to get errors data
+export async function getTaskErrors(taskId: string) {
+  try {
+    const baseUrl = getBaseUrl()
+    console.log(`Getting errors for task ID: ${taskId}`)
+    const response = await fetch(`${baseUrl}/api/seo-audit/get-errors?taskId=${encodeURIComponent(taskId)}`)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Error getting task errors: ${response.status}`, errorText)
+      throw new Error(`Error getting task errors: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("Errors response:", JSON.stringify(data).substring(0, 500) + "...")
+
+    // Extract the result from the response
+    if (data.tasks && data.tasks.length > 0 && data.tasks[0].result) {
+      return data.tasks[0].result
+    }
+
+    return []
+  } catch (error) {
+    console.error("Error getting task errors:", error)
+    return []
+  }
+}
+
+// Function to get resources data
+export async function getTaskResources(taskId: string, options: any = {}) {
+  try {
+    const baseUrl = getBaseUrl()
+    console.log(`Getting resources for task ID: ${taskId}`)
+    
+    // Build the URL with query parameters
+    let url = `${baseUrl}/api/seo-audit/get-resources?taskId=${encodeURIComponent(taskId)}`
+    
+    // Add optional parameters if provided
+    if (options.resourceType) {
+      url += `&resourceType=${encodeURIComponent(options.resourceType)}`
+    }
+    
+    if (options.limit) {
+      url += `&limit=${encodeURIComponent(options.limit)}`
+    }
+    
+    if (options.offset) {
+      url += `&offset=${encodeURIComponent(options.offset)}`
+    }
+    
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Error getting resources: ${response.status}`, errorText)
+      throw new Error(`Error getting resources: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("Resources response:", JSON.stringify(data).substring(0, 500) + "...")
+
+    // Extract the result from the response
+    if (data.tasks && data.tasks.length > 0 && data.tasks[0].result) {
+      return data.tasks[0].result
+    }
+
+    return []
+  } catch (error) {
+    console.error("Error getting resources:", error)
+    return []
+  }
+}
+
+// Function to get task summary
+export async function getTaskSummary(taskId: string) {
+  try {
+    const baseUrl = getBaseUrl()
+    console.log(`Getting summary for task ID: ${taskId}`)
+    const response = await fetch(`${baseUrl}/api/seo-audit/get-summary?taskId=${encodeURIComponent(taskId)}`)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Error getting task summary: ${response.status}`, errorText)
+      throw new Error(`Error getting task summary: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("Summary response:", JSON.stringify(data).substring(0, 500) + "...")
+
+    return data
+  } catch (error) {
+    console.error("Error getting task summary:", error)
+    throw error
+  }
+}
+
+// Function to run an instant page audit
+export async function runInstantPageAudit(url: string) {
+  try {
+    const baseUrl = getBaseUrl()
+    console.log(`Running instant page audit for: ${url}`)
+
+    const response = await fetch(`${baseUrl}/api/seo-audit/instant-page-audit`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ url }),
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`Error running instant page audit: ${response.status}`, errorText)
+      throw new Error(`Error running instant page audit: ${response.status}`)
+    }
+
+    const data = await response.json()
+    console.log("Instant page audit result:", data)
+
+    return data
+  } catch (error) {
+    console.error("Error running instant page audit:", error)
+    throw error
+  }
+}

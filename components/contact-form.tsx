@@ -63,25 +63,25 @@ export function ContactForm() {
   return (
     <Card>
       <CardContent className="space-y-4">
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 text-gray-900">
           <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" placeholder="John Doe" {...form.register("name")} />
+            <Label htmlFor="name" className="text-gray-900">Name</Label>
+            <Input id="name" placeholder="John Doe" className="text-gray-900" {...form.register("name")} />
             {form.formState.errors.name && <p className="text-sm text-red-500">{form.formState.errors.name.message}</p>}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="john.doe@example.com" {...form.register("email")} />
+            <Label htmlFor="email" className="text-gray-900">Email</Label>
+            <Input id="email" type="email" placeholder="john.doe@example.com" className="text-gray-900" {...form.register("email")} />
             {form.formState.errors.email && (
               <p className="text-sm text-red-500">{form.formState.errors.email.message}</p>
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="message">Message</Label>
+            <Label htmlFor="message" className="text-gray-900">Message</Label>
             <Textarea
               id="message"
               placeholder="Enter your message here"
-              className="min-h-[100px]"
+              className="min-h-[100px] text-gray-900"
               {...form.register("message")}
             />
             {form.formState.errors.message && (
@@ -103,4 +103,3 @@ export function ContactForm() {
     </Card>
   )
 }
-

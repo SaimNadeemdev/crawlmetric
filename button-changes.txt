@@ -1,0 +1,20 @@
+Add the following import to the imports section:
+
+import { ListFilter } from "lucide-react"
+
+Add the following code after line 817 (after the closing </motion.div> for the Refresh All button):
+
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="mr-2"
+            >
+              <Button
+                variant="outline"
+                onClick={() => router.push('/dashboard/overview')}
+                className="h-10 px-4 rounded-lg border-[#d2d2d7] bg-white text-gray-700 hover:bg-gray-50 transition-all"
+              >
+                <ArrowRight className="mr-2 h-4 w-4" />
+                <span>Keywords Overview</span>
+              </Button>
+            </motion.div>

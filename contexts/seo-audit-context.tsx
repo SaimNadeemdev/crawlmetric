@@ -12,6 +12,8 @@ import {
   getTaskDuplicateContent,
   getTaskErrors,
   getTaskResources,
+  startLighthouseAudit,
+  getLighthouseResults,
 } from "@/lib/dataforseo-api"
 
 // Define the types for our context
@@ -165,7 +167,7 @@ type SeoAuditContextType = {
   siteAuditSummary: any | null
   activeSiteAuditTask: string | null
   setActiveSiteAuditTask: (taskId: string | null) => void
-  startSiteAudit: (url: string) => Promise<string>
+  startSiteAudit: (url: string, options: any) => Promise<string>
   loadSiteAuditSummary: (taskId: string) => Promise<void>
   updateTaskStatus: (taskId: string, status: any) => void
   loadSiteAuditPages: (taskId: string) => Promise<any>
@@ -182,6 +184,12 @@ type SeoAuditContextType = {
   siteAuditDuplicateContent: DuplicateContentData[] | null
   siteAuditErrors: ErrorData[] | null
   siteAuditResources: ResourceData[] | null
+  // Lighthouse audit properties and functions
+  lighthouseAuditLoading: boolean
+  lighthouseAuditResults: any | null
+  lighthouseAuditError: string | null
+  startLighthouseAudit: (url: string, options: any) => Promise<any>
+  getLighthouseResults: (taskId: string) => Promise<any>
 }
 
 // Create the context
@@ -211,6 +219,218 @@ export function SeoAuditProvider({ children }: { children: ReactNode }) {
   const [siteAuditDuplicateContent, setSiteAuditDuplicateContent] = useState<DuplicateContentData[] | null>(null)
   const [siteAuditErrors, setSiteAuditErrors] = useState<ErrorData[] | null>(null)
   const [siteAuditResources, setSiteAuditResources] = useState<ResourceData[] | null>(null)
+
+  // Lighthouse audit state
+  const [lighthouseAuditLoading, setLighthouseAuditLoading] = useState<boolean>(false)
+  const [lighthouseAuditResults, setLighthouseAuditResults] = useState<any | null>(null)
+  const [lighthouseAuditError, setLighthouseAuditError] = useState<string | null>(null)
+
+  // State for Lighthouse audit polling
+  const [lighthousePollingInterval, setLighthousePollingInterval] = useState<NodeJS.Timeout | null>(null);
+  const [lighthousePollingTaskId, setLighthousePollingTaskId] = useState<string | null>(null);
+  const [lighthousePollingAttempts, setLighthousePollingAttempts] = useState<number>(0);
+  const MAX_POLLING_ATTEMPTS = 10; // Maximum number of polling attempts
+  const POLLING_INTERVAL = 5000; // 5 seconds between polling attempts
+
+  // Clear any active Lighthouse polling
+  const clearLighthousePolling = useCallback(() => {
+    if (lighthousePollingInterval) {
+      clearInterval(lighthousePollingInterval);
+      setLighthousePollingInterval(null);
+    }
+    setLighthousePollingTaskId(null);
+    setLighthousePollingAttempts(0);
+  }, [lighthousePollingInterval]);
+
+  // Function to get Lighthouse results
+  const handleGetLighthouseResults = useCallback(async (taskId: string) => {
+    try {
+      setLighthouseAuditLoading(true);
+      setLighthouseAuditError(null);
+
+      console.log("Getting Lighthouse results for task ID:", taskId);
+
+      // Call the API function to get the results
+      const result = await getLighthouseResults(taskId);
+      console.log("Lighthouse results received:", result);
+
+      if (!result.success) {
+        // Handle specific error cases
+        if (result.error && typeof result.error === 'string') {
+          // Handle in-progress status
+          if (result.status === "in_progress" || 
+              result.error.includes("still processing") || 
+              result.error.includes("not available yet")) {
+            setLighthouseAuditError("Lighthouse audit results are still processing. Please wait a moment.");
+            // Return the error but don't stop polling
+            return result;
+          } 
+          // Handle not found status
+          else if (result.status === "not_found" || 
+                   result.error.includes("Could not find URL") || 
+                   result.error.includes("Not Found") || 
+                   result.error.includes("task not found")) {
+            setLighthouseAuditError("Could not find the URL or task associated with this audit. The audit may need to be restarted.");
+            // This is a terminal error, stop polling
+            clearLighthousePolling();
+          } 
+          // Handle timeout status
+          else if (result.error.includes("timeout") || result.error.includes("timed out")) {
+            setLighthouseAuditError("The Lighthouse audit timed out. Please try running the audit again.");
+            clearLighthousePolling();
+          }
+          // Handle other errors
+          else {
+            setLighthouseAuditError(result.error);
+            // For other errors, continue polling if we're under the max attempts
+          }
+        } else {
+          setLighthouseAuditError("Failed to fetch Lighthouse results. Please try again.");
+        }
+        
+        return result;
+      }
+
+      // Set the results in state
+      setLighthouseAuditResults(result);
+      setLighthouseAuditLoading(false);
+      return result;
+    } catch (error) {
+      console.error("Error getting Lighthouse results:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      setLighthouseAuditError(errorMessage);
+      toast({
+        title: "Error",
+        description: `Failed to get Lighthouse audit results: ${errorMessage}`,
+        variant: "destructive",
+      });
+      return { success: false, error: errorMessage, status: "error" };
+    } finally {
+      // Only set loading to false if we're not actively polling
+      if (!lighthousePollingTaskId || lighthousePollingTaskId !== taskId) {
+        setLighthouseAuditLoading(false);
+      }
+    }
+  }, [toast, clearLighthousePolling, lighthousePollingTaskId]);
+
+  // Start polling for Lighthouse results
+  const startLighthousePolling = useCallback((taskId: string) => {
+    // Clear any existing polling
+    clearLighthousePolling();
+    
+    // Set the task ID we're polling for
+    setLighthousePollingTaskId(taskId);
+    setLighthousePollingAttempts(0);
+    
+    console.log(`Starting Lighthouse polling for task ${taskId} with interval ${POLLING_INTERVAL}ms`);
+    
+    // Create a new polling interval
+    const interval = setInterval(async () => {
+      // Increment the polling attempts counter
+      setLighthousePollingAttempts(prev => {
+        const newCount = prev + 1;
+        console.log(`Lighthouse polling attempt ${newCount} for task ${taskId}`);
+        return newCount;
+      });
+      
+      try {
+        // Check if we've reached the maximum number of attempts
+        if (lighthousePollingAttempts >= MAX_POLLING_ATTEMPTS) {
+          console.log(`Reached maximum polling attempts (${MAX_POLLING_ATTEMPTS}) for task ${taskId}`);
+          clearLighthousePolling();
+          setLighthouseAuditError("Lighthouse audit timed out after multiple attempts. Please try again later.");
+          return;
+        }
+        
+        // Check if the task is ready
+        const result = await handleGetLighthouseResults(taskId);
+        
+        // If we got successful results, stop polling
+        if (result.success) {
+          console.log(`Successfully retrieved Lighthouse results for task ${taskId}`);
+          clearLighthousePolling();
+        } else {
+          // Check the status to determine if we should continue polling
+          if (result.status === "not_found" || 
+              (result.error && typeof result.error === 'string' && 
+               (result.error.includes("not found") || 
+                result.error.includes("Could not find")))) {
+            console.log(`Task ${taskId} not found, stopping polling`);
+            clearLighthousePolling();
+            setLighthouseAuditError("Lighthouse audit not found. The task may have expired or been deleted.");
+          } else if (result.status === "error" && 
+                     result.error && 
+                     typeof result.error === 'string' && 
+                     !result.error.includes("still processing") && 
+                     !result.error.includes("in progress")) {
+            // If we have a non-recoverable error, stop polling
+            console.log(`Encountered non-recoverable error for task ${taskId}, stopping polling: ${result.error}`);
+            clearLighthousePolling();
+          } else {
+            // For in_progress status or other recoverable errors, continue polling
+            console.log(`Task ${taskId} still in progress, continuing polling (attempt ${lighthousePollingAttempts} of ${MAX_POLLING_ATTEMPTS})`);
+            // Adjust polling interval based on the number of attempts (exponential backoff)
+            if (lighthousePollingAttempts > 5) {
+              if (lighthousePollingInterval) {
+                clearInterval(lighthousePollingInterval);
+              }
+              const newInterval = Math.min(POLLING_INTERVAL * 2, 10000); // Max 10 seconds
+              console.log(`Increasing polling interval to ${newInterval}ms`);
+              const newIntervalId = setInterval(async () => {
+                // This will be called on the next interval
+                setLighthousePollingAttempts(prev => {
+                  const newCount = prev + 1;
+                  console.log(`Lighthouse polling attempt ${newCount} for task ${taskId} (with increased interval)`);
+                  return newCount;
+                });
+                
+                try {
+                  const result = await handleGetLighthouseResults(taskId);
+                  if (result.success) {
+                    console.log(`Successfully retrieved Lighthouse results for task ${taskId}`);
+                    clearLighthousePolling();
+                  } else if (lighthousePollingAttempts >= MAX_POLLING_ATTEMPTS) {
+                    console.log(`Reached maximum polling attempts (${MAX_POLLING_ATTEMPTS}) for task ${taskId}`);
+                    clearLighthousePolling();
+                    setLighthouseAuditError("Lighthouse audit timed out after multiple attempts. Please try again later.");
+                  }
+                } catch (error) {
+                  console.error(`Error in increased interval polling for Lighthouse results:`, error);
+                  if (lighthousePollingAttempts >= MAX_POLLING_ATTEMPTS) {
+                    clearLighthousePolling();
+                    setLighthouseAuditError("Lighthouse audit polling failed after multiple attempts.");
+                  }
+                }
+              }, newInterval);
+              setLighthousePollingInterval(newIntervalId);
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Error polling for Lighthouse results:`, error);
+        
+        // If we've reached the maximum number of attempts, stop polling
+        if (lighthousePollingAttempts >= MAX_POLLING_ATTEMPTS) {
+          clearLighthousePolling();
+          setLighthouseAuditError("Lighthouse audit polling failed after multiple attempts.");
+        }
+      }
+    }, POLLING_INTERVAL);
+    
+    setLighthousePollingInterval(interval);
+    
+    // Return the task ID for chaining
+    return taskId;
+  }, [clearLighthousePolling, handleGetLighthouseResults, lighthousePollingAttempts, lighthousePollingInterval]);
+
+  // Cleanup polling on component unmount
+  useEffect(() => {
+    return () => {
+      if (lighthousePollingInterval) {
+        clearInterval(lighthousePollingInterval);
+      }
+    };
+  }, [lighthousePollingInterval]);
 
   // Helper function to sanitize task data
   const sanitizeTaskData = useCallback((task: any) => {
@@ -302,14 +522,15 @@ export function SeoAuditProvider({ children }: { children: ReactNode }) {
     setInstantAuditError(null)
   }, [])
 
-  const startSiteAudit = useCallback(async (url: string): Promise<string> => {
+  const startSiteAudit = useCallback(async (url: string, options: any = {}): Promise<string> => {
     try {
       setSiteAuditLoading(true)
 
       console.log("Starting site audit for:", url)
+      console.log("With options:", options)
 
-      // Call the real API
-      const taskData = await startFullSiteAudit(url)
+      // Call the real API with options
+      const taskData = await startFullSiteAudit(url, options)
 
       // Add the task to the list with proper type casting
       setSiteAuditTasks((prev) => [{
@@ -330,99 +551,36 @@ export function SeoAuditProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const loadSiteAuditSummary = useCallback(async (taskId: string): Promise<void> => {
-    try {
-      setSiteAuditLoading(true)
-
-      console.log("Loading site audit summary for task:", taskId)
-
-      // Call the real API
-      const summary = await getTaskSummary(taskId)
-      
-      // Debug log to help diagnose issues
-      console.log("Extracted summary result:", JSON.stringify(summary))
-      
-      // Check if we have a valid summary with required fields
-      if (summary && typeof summary === 'object') {
-        console.log("Setting site audit summary in state:", summary.crawl_progress)
-        setSiteAuditSummary(summary)
+  const loadSiteAuditPages = useCallback(
+    async (taskId: string) => {
+      try {
+        console.log("Loading site audit pages for task:", taskId)
+        setSiteAuditLoading(true)
         
-        // If the crawl is finished, we don't need to poll anymore
-        if (summary.crawl_progress === "finished") {
-          console.log("Crawl is finished, stopping polling")
-        }
-      } else {
-        console.warn("Invalid summary data received:", summary)
+        // Find the task to get its max_crawl_pages
+        const task = siteAuditTasks.find(t => t.id === taskId);
+        const maxPages = task?.data?.max_crawl_pages || 100;
+        
+        console.log(`Using maxPages: ${maxPages} for task ${taskId}`);
+        
+        // Pass maxPages to getTaskPages
+        const pages = await getTaskPages(taskId, 100, 0, maxPages);
+        setSiteAuditPages(pages);
+        return pages;
+      } catch (error) {
+        console.error("Error loading site audit pages:", error)
         toast({
-          title: "Warning",
-          description: "Received incomplete data from the API. Some information may be missing.",
-          variant: "default",
+          title: "Error",
+          description: "Failed to load audit pages. Please try again.",
+          variant: "destructive",
         })
+        return []
+      } finally {
+        setSiteAuditLoading(false)
       }
-    } catch (error) {
-      console.error("Error loading site audit summary:", error)
-      toast({
-        title: "Error",
-        description: "Failed to load audit summary. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setSiteAuditLoading(false)
-    }
-  }, [])
-
-  const updateTaskStatus = useCallback((taskId: string, status: any) => {
-    setSiteAuditTasks((prev) => prev.map((task) => {
-      if (task.id === taskId) {
-        // Create a properly typed status if it exists in the update
-        const updatedStatus = status.status ? 
-          (status.status === "finished" ? "completed" : 
-           status.status === "in_progress" ? "running" : 
-           status.status === "error" ? "failed" : 
-           "pending") as "pending" | "running" | "completed" | "failed" 
-          : task.status;
-        
-        return { 
-          ...task, 
-          ...status,
-          status: updatedStatus
-        };
-      }
-      return task;
-    }))
-  }, [])
-
-// In the loadSiteAuditPages function (around line 380-400)
-const loadSiteAuditPages = useCallback(
-  async (taskId: string) => {
-    try {
-      console.log("Loading site audit pages for task:", taskId)
-      setSiteAuditLoading(true)
-      
-      // Find the task to get its max_crawl_pages
-      const task = siteAuditTasks.find(t => t.id === taskId);
-      const maxPages = task?.data?.max_crawl_pages || 100;
-      
-      console.log(`Using maxPages: ${maxPages} for task ${taskId}`);
-      
-      // Pass maxPages to getTaskPages
-      const pages = await getTaskPages(taskId, 100, 0, maxPages);
-      setSiteAuditPages(pages);
-      return pages;
-    } catch (error) {
-      console.error("Error loading site audit pages:", error)
-      toast({
-        title: "Error",
-        description: "Failed to load audit pages. Please try again.",
-        variant: "destructive",
-      })
-      return []
-    } finally {
-      setSiteAuditLoading(false)
-    }
-  },
-  [siteAuditTasks, toast]
-)
+    },
+    [siteAuditTasks, toast]
+  )
 
   const loadSiteAuditDuplicateTags = useCallback(
     async (taskId: string): Promise<DuplicateTagData[]> => {
@@ -627,14 +785,8 @@ const loadSiteAuditPages = useCallback(
 
     try {
       console.log("Loading errors data for task:", taskId)
-      const options = {
-        limit: 100,
-        offset: 0
-      }
-      
-      const errorsData = await getTaskErrors(taskId, options)
+      const errorsData = await getTaskErrors(taskId)
       console.log("Loaded errors data:", errorsData)
-      
       setSiteAuditErrors(errorsData)
       return errorsData
     } catch (error) {
@@ -656,12 +808,38 @@ const loadSiteAuditPages = useCallback(
 
     try {
       console.log("Loading resources data for task:", taskId, "with options:", options)
+      setSiteAuditLoading(true)
       
       const resourcesData = await getTaskResources(taskId, options)
       console.log("Loaded resources data:", resourcesData)
       
-      setSiteAuditResources(resourcesData.items || [])
-      return resourcesData.items || []
+      // Extract resources from the nested API response structure
+      let resourceItems: ResourceData[] = []
+      
+      if (resourcesData && resourcesData.success && Array.isArray(resourcesData.data)) {
+        // Handle the response from our API route
+        resourceItems = resourcesData.data
+        console.log(`Found ${resourceItems.length} resources from API route response`)
+      } else if (resourcesData && resourcesData.tasks && resourcesData.tasks.length > 0) {
+        // Handle the full API response structure
+        const task = resourcesData.tasks[0]
+        if (task.result && task.result.length > 0) {
+          const result = task.result[0]
+          resourceItems = result.items || []
+          console.log(`Found ${resourceItems.length} resources out of ${result.total_count || 0} total`)
+        }
+      } else if (resourcesData && Array.isArray(resourcesData.items)) {
+        // Handle already extracted items
+        resourceItems = resourcesData.items
+      } else if (Array.isArray(resourcesData)) {
+        // Handle direct array
+        resourceItems = resourcesData
+      }
+      
+      console.log("Resource items extracted:", resourceItems.length, "items")
+      console.log("First resource item sample:", resourceItems.length > 0 ? JSON.stringify(resourceItems[0]) : "No items")
+      setSiteAuditResources(resourceItems)
+      return resourceItems
     } catch (error) {
       console.error("Error loading resources data:", error)
       toast({
@@ -670,8 +848,81 @@ const loadSiteAuditPages = useCallback(
         variant: "destructive",
       })
       return []
+    } finally {
+      setSiteAuditLoading(false)
     }
   }, [toast])
+
+  const loadSiteAuditSummary = useCallback(async (taskId: string): Promise<void> => {
+    try {
+      setSiteAuditLoading(true)
+
+      console.log("Loading site audit summary for task:", taskId)
+
+      // Call the real API
+      const summary = await getTaskSummary(taskId)
+      
+      // Debug log to help diagnose issues
+      console.log("Extracted summary result:", JSON.stringify(summary))
+      
+      // Check if we have a valid summary with required fields
+      if (summary && typeof summary === 'object') {
+        console.log("Setting site audit summary in state:", summary.crawl_progress)
+        setSiteAuditSummary(summary)
+        
+        // If the crawl is finished, load all necessary data for the report
+        if (summary.crawl_progress === "finished" || summary.crawl_progress === "in_progress") {
+          // Load initial data for all tabs to ensure we have data ready when the user switches tabs
+          await Promise.all([
+            loadSiteAuditPages(taskId),
+            loadSiteAuditLinks(taskId),
+            loadSiteAuditDuplicateTags(taskId),
+            loadSiteAuditNonIndexable(taskId),
+            loadSiteAuditResources(taskId)
+          ])
+          
+          console.log("All initial data loaded successfully")
+        }
+      } else {
+        console.warn("Invalid summary data received:", summary)
+        toast({
+          title: "Warning",
+          description: "Received incomplete data from the API. Some information may be missing.",
+          variant: "default",
+        })
+      }
+    } catch (error) {
+      console.error("Error loading site audit summary:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load audit summary. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setSiteAuditLoading(false)
+    }
+  }, [loadSiteAuditPages, loadSiteAuditLinks, loadSiteAuditDuplicateTags, loadSiteAuditNonIndexable, loadSiteAuditResources, toast])
+
+  const updateTaskStatus = useCallback((taskId: string, status: any) => {
+    setSiteAuditTasks((prev) => prev.map((task) => {
+      if (task.id === taskId) {
+        // Create a properly typed status if it exists in the update
+        const updatedStatus = status.status ? 
+          (status.status === "finished" ? "completed" : 
+           status.status === "in_progress" ? "running" : 
+           status.status === "error" ? "failed" : 
+           "pending") as "pending" | "running" | "completed" | "failed" 
+          : task.status;
+        
+        return { 
+          ...task, 
+          ...status,
+          status: updatedStatus
+        };
+      }
+      return task;
+    }))
+  }, [])
 
   const setActiveSiteAuditTask = useCallback((taskId: string | null) => {
     console.log("Setting active site audit task:", taskId)
@@ -720,6 +971,12 @@ const loadSiteAuditPages = useCallback(
     siteAuditDuplicateContent,
     siteAuditErrors,
     siteAuditResources,
+    // Lighthouse audit properties and functions
+    lighthouseAuditLoading,
+    lighthouseAuditResults,
+    lighthouseAuditError,
+    startLighthouseAudit,
+    getLighthouseResults: handleGetLighthouseResults,
   }
 
   return <SeoAuditContext.Provider value={value}>{children}</SeoAuditContext.Provider>

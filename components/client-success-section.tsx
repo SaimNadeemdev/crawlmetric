@@ -468,7 +468,7 @@ export const AnimatedTitle = ({ children }: { children: React.ReactNode }) => {
   return (
     <h2 className={`mb-6 text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl section-title ${fsMe.className}`}>
       <span className="sr-only">{text}</span>
-      <span className="bg-gradient-to-r from-blue-600 to-blue-300 bg-clip-text text-transparent inline-block">
+      <span className="text-[#0071e3] inline-block">
         {letters.map((letter, index) => (
           <motion.span
             key={index}

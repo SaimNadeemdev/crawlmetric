@@ -13,6 +13,7 @@ import { TextAnalysisForm } from "@/components/content-generation/text-summary-f
 import { Badge } from "@/components/ui/badge"
 import ContentGenerationHistory from "@/components/content-generation/content-generation-history"
 import { Button } from "@/components/ui/button"
+import { AnimatedTitle } from "@/components/client-success-section"
 
 export default function ContentGenerationPage() {
   const [activeTab, setActiveTab] = useState("generate-text")
@@ -102,15 +103,15 @@ export default function ContentGenerationPage() {
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           className="mb-8"
         >
-          <div className="flex items-center gap-3 mb-3">
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-[#0071e3] to-[#40a9ff] bg-clip-text text-transparent">
-              Content Generation
-            </h1>
-            <Badge className="bg-gradient-to-r from-[#0071e3] to-[#40a9ff] text-white text-xs font-medium py-1 px-2 rounded-full">
-              AI Powered
-            </Badge>
+          <div className="flex flex-col items-center text-center mb-3">
+            <div className="flex items-center gap-3 mb-3">
+              <AnimatedTitle>Content Generation</AnimatedTitle>
+              <Badge className="bg-gradient-to-r from-[#0071e3] to-[#40a9ff] text-white text-xs font-medium py-1 px-2 rounded-full">
+                AI Powered
+              </Badge>
+            </div>
+            <p className="text-gray-500 text-lg max-w-2xl">Generate high-quality content for your website using AI-powered tools.</p>
           </div>
-          <p className="text-gray-500 text-lg">Generate high-quality content for your website using AI-powered tools.</p>
         </motion.div>
 
         {/* Expandable History Section */}

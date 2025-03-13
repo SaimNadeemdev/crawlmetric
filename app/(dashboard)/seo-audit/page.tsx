@@ -6,18 +6,27 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { InstantAuditForm } from "@/components/seo-audit/instant-audit-form"
 import { FullSiteAuditForm } from "@/components/seo-audit/full-site-audit-form"
 import { SiteAuditTaskList } from "@/components/seo-audit/site-audit-task-list"
-import { Search, Globe, Sparkles, ArrowRight } from "lucide-react"
+import { LighthouseAuditForm } from "@/components/seo-audit/lighthouse-audit-form"
+import LighthouseResults from "@/components/seo-audit/lighthouse-results-fixed"
+import { Search, Globe, Sparkles, ArrowRight, Info, RefreshCw } from "lucide-react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { SeoAuditProvider } from "@/contexts/seo-audit-context"
+import { useSeoAudit } from "@/contexts/seo-audit-context"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { useToast } from "@/components/ui/use-toast"
+import { AnimatedTitle } from "@/components/client-success-section"
 
 export default function SeoAuditPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const tabParam = searchParams.get("tab")
+  const { toast } = useToast()
+  const { activeSiteAuditTask, lighthouseAuditResults, siteAuditTasks } = useSeoAudit()
+  const { setActiveSiteAuditTask } = useSeoAudit()
   const [activeTab, setActiveTab] = useState<string>(
-    tabParam === "site" ? "site" : "instant"
+    tabParam === "site" ? "site" : tabParam === "lighthouse" ? "lighthouse" : "instant"
   )
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [mounted, setMounted] = useState(false)
@@ -31,7 +40,7 @@ export default function SeoAuditPage() {
 
   // Update tab state if URL parameter changes
   useEffect(() => {
-    if (tabParam === "site" || tabParam === "instant") {
+    if (tabParam === "site" || tabParam === "instant" || tabParam === "lighthouse") {
       setActiveTab(tabParam)
     }
   }, [tabParam])
@@ -207,7 +216,9 @@ export default function SeoAuditPage() {
               </motion.div>
             </div>
 
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-gray-900 mb-3">Onsite SEO Audit</h1>
+            <div className="flex items-center justify-center mb-3">
+              <AnimatedTitle>Onsite SEO Audit</AnimatedTitle>
+            </div>
 
             <div className="flex items-center justify-center gap-3 mb-4">
               <Badge className="bg-gradient-to-r from-[#0071e3] to-[#40a9ff] text-white text-xs font-medium py-1 px-3 rounded-full">
@@ -243,7 +254,7 @@ export default function SeoAuditPage() {
                     className="space-y-8"
                   >
                     <div className="bg-gray-50/80 backdrop-blur-sm rounded-2xl p-1.5 border border-gray-100 shadow-sm">
-                      <TabsList className="grid grid-cols-2 gap-2 bg-transparent h-auto p-0">
+                      <TabsList className="grid grid-cols-3 gap-2 bg-transparent h-auto p-0">
                         <TabsTrigger
                           value="instant"
                           className={`flex items-center gap-2 rounded-xl px-4 py-3.5 text-sm font-medium transition-all duration-300 ${
@@ -265,6 +276,17 @@ export default function SeoAuditPage() {
                         >
                           <Globe className={`h-4 w-4 ${activeTab === "site" ? "text-white" : "text-[#0071e3]"}`} />
                           <span>Full Site Audit</span>
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="lighthouse"
+                          className={`flex items-center gap-2 rounded-xl px-4 py-3.5 text-sm font-medium transition-all duration-300 ${
+                            activeTab === "lighthouse"
+                              ? "bg-gradient-to-r from-[#0071e3] to-[#40a9ff] !text-white shadow-md"
+                              : "text-gray-600 hover:bg-white hover:shadow-sm"
+                          }`}
+                        >
+                          <Sparkles className={`h-4 w-4 ${activeTab === "lighthouse" ? "text-white" : "text-[#0071e3]"}`} />
+                          <span>Lighthouse Audit</span>
                         </TabsTrigger>
                       </TabsList>
                     </div>
@@ -328,6 +350,37 @@ export default function SeoAuditPage() {
                             <motion.div variants={itemVariants} className="w-full space-y-8">
                               <FullSiteAuditForm />
                               <SiteAuditTaskList />
+                            </motion.div>
+                          </motion.div>
+                        </motion.div>
+                      </TabsContent>
+
+                      <TabsContent value="lighthouse" className="space-y-6 mt-8" asChild>
+                        <motion.div
+                          key="lighthouse"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                        >
+                          <div className="space-y-2 mb-6">
+                            <h2 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
+                              <Sparkles className="h-5 w-5 text-[#0071e3]" />
+                              Lighthouse Audit
+                            </h2>
+                            <p className="text-gray-500">
+                              Performance, accessibility, SEO, and best practices analysis powered by Google Lighthouse
+                            </p>
+                          </div>
+
+                          <motion.div
+                            variants={containerVariants}
+                            initial="hidden"
+                            animate="visible"
+                            className="grid grid-cols-1 gap-6"
+                          >
+                            <motion.div variants={itemVariants} className="w-full">
+                              <LighthouseAuditForm />
                             </motion.div>
                           </motion.div>
                         </motion.div>
