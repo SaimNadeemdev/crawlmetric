@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import type React from "react"
 
@@ -375,16 +375,14 @@ export default function KeywordResearch() {
           .join("\n")
     }
 
-    // Create and download the CSV file
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.setAttribute("href", url)
-    link.setAttribute("download", `${mode}_${new Date().toISOString().split("T")[0]}.csv`)
-    link.style.visibility = "hidden"
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    // Use client-side utility for downloading
+    import('@/utils/client-utils').then(({ downloadFile }) => {
+      downloadFile(
+        csvContent,
+        `${mode}_${new Date().toISOString().split("T")[0]}.csv`,
+        'text/csv;charset=utf-8;'
+      );
+    });
   }
 
   // Filter results based on search query
@@ -863,4 +861,3 @@ export default function KeywordResearch() {
     </div>
   </div>
 </div>
-

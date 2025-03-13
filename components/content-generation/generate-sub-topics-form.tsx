@@ -122,18 +122,19 @@ export function GenerateSubTopicsForm() {
     if (!result) return
 
     const text = result.map((topic, index) => `${index + 1}. ${topic}`).join("\n")
-    const element = document.createElement("a")
-    const file = new Blob([text], { type: "text/plain" })
-    element.href = URL.createObjectURL(file)
-    element.download = `sub-topics-${form.getValues().topic.replace(/\s+/g, "-").toLowerCase()}.txt`
-    document.body.appendChild(element)
-    element.click()
-    document.body.removeChild(element)
-
-    toast({
-      title: "Downloaded",
-      description: "Sub-topics downloaded as text file",
-    })
+    
+    import('@/utils/client-utils').then(({ downloadFile }) => {
+      downloadFile(
+        text,
+        `sub-topics-${form.getValues().topic.replace(/\s+/g, "-").toLowerCase()}.txt`,
+        'text/plain'
+      );
+      
+      toast({
+        title: "Downloaded",
+        description: "Sub-topics downloaded as text file",
+      });
+    });
   }
 
   return (

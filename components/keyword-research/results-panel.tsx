@@ -6,15 +6,35 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
+// Define the result item interface
+interface KeywordResult {
+  keyword: string;
+  search_volume: number;
+  cpc: number;
+  competition: number;
+  keyword_difficulty: number;
+  competition_level?: string;
+}
+
 // Helper function to format numbers
-const formatNumber = (num) => {
+const formatNumber = (num: number): string => {
   if (num === 0 || !num) return "0"
   return new Intl.NumberFormat().format(num)
 }
 
-export function ResultsPanel({ results = [], isLoading, timestamp, error }) {
+export function ResultsPanel({ 
+  results = [], 
+  isLoading, 
+  timestamp, 
+  error 
+}: { 
+  results: KeywordResult[]; 
+  isLoading: boolean; 
+  timestamp?: string; 
+  error?: string;
+}) {
   const [searchQuery, setSearchQuery] = useState("")
-  const [filteredResults, setFilteredResults] = useState([])
+  const [filteredResults, setFilteredResults] = useState<KeywordResult[]>([])
 
   // Debug logging
   useEffect(() => {
@@ -35,33 +55,23 @@ export function ResultsPanel({ results = [], isLoading, timestamp, error }) {
     setFilteredResults(filtered)
   }, [results, searchQuery])
 
+  // Export to CSV function
   const exportToCsv = () => {
     if (!filteredResults.length) return
 
-    const headers = ["Keyword", "Search Volume", "CPC", "Competition", "Difficulty", "Level"]
-    const csvData = [
-      headers.join(","),
-      ...filteredResults.map((result) =>
-        [
-          `"${result.keyword}"`,
-          result.search_volume,
-          result.cpc.toFixed(2),
-          (result.competition * 100).toFixed(0),
-          result.keyword_difficulty,
-          result.competition_level,
-        ].join(","),
-      ),
-    ].join("\n")
+    // Create CSV content
+    let csvData = "Keyword,Search Volume,CPC,Competition,Difficulty\n"
+    filteredResults.forEach((item) => {
+      csvData += `"${item.keyword}",${item.search_volume || 0},${item.cpc || 0},${item.competition || 0},${item.keyword_difficulty || 0}\n`
+    })
 
-    const blob = new Blob([csvData], { type: "text/csv" })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `keyword-research-${new Date().toISOString()}.csv`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
+    import('@/utils/client-utils').then(({ downloadFile }) => {
+      downloadFile(
+        csvData,
+        `keyword-research-${new Date().toISOString()}.csv`,
+        'text/csv'
+      );
+    });
   }
 
   if (isLoading) {
@@ -166,4 +176,3 @@ export function ResultsPanel({ results = [], isLoading, timestamp, error }) {
     </div>
   )
 }
-

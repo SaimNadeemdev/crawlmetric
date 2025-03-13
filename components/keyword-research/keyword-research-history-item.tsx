@@ -530,16 +530,14 @@ export function KeywordResearchHistoryItem({ result, onBack }: KeywordResearchHi
       csvContent += row.join(',') + '\n';
     });
     
-    // Create download link
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `keyword-research-${result.mode}-${new Date().toISOString().slice(0, 10)}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Use client-side utility for downloading
+    import('@/utils/client-utils').then(({ downloadFile }) => {
+      downloadFile(
+        csvContent,
+        `keyword-research-${result.mode}-${new Date().toISOString().slice(0, 10)}.csv`,
+        'text/csv;charset=utf-8;'
+      );
+    });
   };
 
   return (

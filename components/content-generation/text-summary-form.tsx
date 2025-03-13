@@ -195,22 +195,20 @@ export function TextAnalysisForm() {
     }
   }
 
-  // Download result as text file
+  // Download summary as text file
   const downloadAsText = () => {
     if (summary) {
-      const blob = new Blob([summary], { type: "text/plain" })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `text-summary-${new Date().toISOString().slice(0, 10)}.txt`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-      toast({
-        title: "Downloaded",
-        description: "Text summary downloaded as text file",
-      })
+      import('@/utils/client-utils').then(({ downloadFile }) => {
+        downloadFile(
+          summary,
+          `text-summary-${new Date().toISOString().slice(0, 10)}.txt`,
+          'text/plain'
+        );
+        toast({
+          title: "Downloaded",
+          description: "Text summary downloaded as text file",
+        });
+      });
     }
   }
 
@@ -447,8 +445,8 @@ export function TextAnalysisForm() {
                       <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 20 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
                         className="mt-10"
                       >
                         <div className="relative">

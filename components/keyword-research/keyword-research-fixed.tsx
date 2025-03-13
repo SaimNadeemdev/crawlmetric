@@ -146,62 +146,29 @@ export function KeywordResearchFixed() {
   }
 
   // Export results to CSV
-  const exportToCsv = () => {
-    if (!results.length) return
+  const handleExportCSV = () => {
+    if (results.length === 0) return
 
-    // Create CSV content based on mode
-    let csvContent = ""
+    // Create CSV content
+    let csvContent = "data:text/csv;charset=utf-8,"
+    const headers = Object.keys(results[0])
+    csvContent += headers.join(",") + "\n"
 
-    switch (mode) {
-      case "keywords_for_site":
-        csvContent = "Keyword,Position,Search Volume,Traffic,Traffic Cost,CPC,URL\n"
-        csvContent += results
-          .map(
-            (item: any) =>
-              `"${item.keyword}",${item.position},${item.search_volume},${item.traffic},${item.traffic_cost},${item.cpc},"${item.url}"`,
-          )
-          .join("\n")
-        break
+    results.forEach((result) => {
+      const values = headers.map((header) => {
+        const value = result[header as keyof typeof result]
+        return typeof value === "string" ? `"${value}"` : value
+      })
+      csvContent += values.join(",") + "\n"
+    })
 
-      case "historical_search_volume":
-        // For historical data, we'll create a flattened CSV
-        csvContent = "Keyword,Year,Month,Search Volume\n"
-        results.forEach((item: any) => {
-          item.historical_data.forEach((entry: any) => {
-            csvContent += `"${item.keyword}",${entry.year},${entry.month},${entry.search_volume}\n`
-          })
-        })
-        break
-
-      case "bulk_keyword_difficulty":
-        csvContent = "Keyword,Difficulty,Search Volume\n"
-        csvContent += results
-          .map((item: any) => `"${item.keyword}",${item.keyword_difficulty},${item.search_volume}`)
-          .join("\n")
-        break
-
-      case "keyword_suggestions":
-      case "keyword_ideas":
-      default:
-        csvContent = "Keyword,Search Volume,CPC,Competition,Difficulty,Level\n"
-        csvContent += results
-          .map(
-            (item: any) =>
-              `"${item.keyword}",${item.search_volume},${item.cpc},${item.competition},${item.keyword_difficulty},"${item.competition_level}"`,
-          )
-          .join("\n")
-    }
-
-    // Create and download the CSV file
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.setAttribute("href", url)
-    link.setAttribute("download", `${mode}_${new Date().toISOString().split("T")[0]}.csv`)
-    link.style.visibility = "hidden"
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    import('@/utils/client-utils').then(({ downloadFile }) => {
+      downloadFile(
+        csvContent,
+        `${mode}_${new Date().toISOString().split("T")[0]}.csv`,
+        'text/csv;charset=utf-8;'
+      );
+    });
   }
 
   // Render form fields based on mode
@@ -349,7 +316,7 @@ export function KeywordResearchFixed() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Button onClick={exportToCsv} variant="outline" size="sm" disabled={!results.length}>
+              <Button onClick={handleExportCSV} variant="outline" size="sm" disabled={!results.length}>
                 <Download className="mr-2 h-4 w-4" />
                 Export CSV
               </Button>
@@ -417,7 +384,7 @@ export function KeywordResearchFixed() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {result.historical_data.map((entry, i) => (
+                      {result.historical_data.map((entry: { year: number; month: number; search_volume: number }, i: number) => (
                         <TableRow key={i}>
                           <TableCell>
                             {new Date(entry.year, entry.month - 1).toLocaleDateString("en-US", {
@@ -513,4 +480,3 @@ export function KeywordResearchFixed() {
     </div>
   )
 }
-

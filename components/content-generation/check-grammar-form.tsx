@@ -170,22 +170,20 @@ export function CheckGrammarForm() {
     }
   }
 
-  // Download result as text file
+  // Download corrected text as file
   const downloadAsText = () => {
     if (result) {
-      const blob = new Blob([result.correctedText], { type: "text/plain" })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `corrected-text-${new Date().toISOString().slice(0, 10)}.txt`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-      toast({
-        title: "Downloaded",
-        description: "Corrected text downloaded as text file",
-      })
+      import('@/utils/client-utils').then(({ downloadFile }) => {
+        downloadFile(
+          result.correctedText,
+          `corrected-text-${new Date().toISOString().slice(0, 10)}.txt`,
+          'text/plain'
+        );
+        toast({
+          title: "Downloaded",
+          description: "Corrected text downloaded as text file",
+        });
+      });
     }
   }
 

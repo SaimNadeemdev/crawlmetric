@@ -435,15 +435,14 @@ export function KeywordResearchResults() {
         });
     }
 
-    // Create a download link
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `keyword-research-${mode}-${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Create a download link using client-side utility
+    import('@/utils/client-utils').then(({ downloadFile }) => {
+      downloadFile(
+        csvContent,
+        `keyword-research-${mode}-${new Date().toISOString().slice(0, 10)}.csv`,
+        'text/csv;charset=utf-8;'
+      );
+    });
   }
 
   // Get title based on mode

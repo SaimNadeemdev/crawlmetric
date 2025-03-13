@@ -36,7 +36,7 @@ export function ContentResultCard({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Default download handler if none provided
+  // Handle download button click
   const handleDownload = () => {
     if (onDownload) {
       onDownload();
@@ -45,14 +45,14 @@ export function ContentResultCard({
 
     if (!downloadFileName) return;
 
-    const element = document.createElement("a");
-    const file = new Blob([content], { type: "text/plain" });
-    element.href = URL.createObjectURL(file);
-    element.download = downloadFileName;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-    toast.success(`Downloaded as ${downloadFileName}`);
+    import('@/utils/client-utils').then(({ downloadFile }) => {
+      downloadFile(
+        content,
+        downloadFileName,
+        'text/plain'
+      );
+      toast.success(`Downloaded as ${downloadFileName}`);
+    });
   };
 
   return (

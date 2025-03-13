@@ -106,22 +106,21 @@ export function GenerateTextForm() {
     }
   }
 
+  // Download result as text file
   const downloadAsText = () => {
     if (result) {
-      const blob = new Blob([result], { type: "text/plain" })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = url
-      a.download = `generated-content-${new Date().toISOString().slice(0, 10)}.txt`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-
-      toast({
-        title: "Downloaded",
-        description: "Content downloaded as text file",
-      })
+      import('@/utils/client-utils').then(({ downloadFile }) => {
+        downloadFile(
+          result,
+          `generated-content-${new Date().toISOString().slice(0, 10)}.txt`,
+          'text/plain'
+        );
+        
+        toast({
+          title: "Downloaded",
+          description: "Content downloaded as text file",
+        });
+      });
     }
   }
 

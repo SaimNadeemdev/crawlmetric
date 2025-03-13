@@ -39,3 +39,39 @@ export const createDomElement = (tag: string, attributes: Record<string, string>
   
   return element;
 };
+
+// Download a file safely (only on client)
+export const downloadFile = (content: string, fileName: string, contentType: string = 'text/plain') => {
+  if (!isClient) return false;
+  
+  try {
+    const blob = new Blob([content], { type: contentType });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    return true;
+  } catch (error) {
+    console.error('Error downloading file:', error);
+    return false;
+  }
+};
+
+// Set a cookie safely (only on client)
+export const setCookie = (name: string, value: string, maxAge: number) => {
+  if (!isClient) return false;
+  
+  try {
+    document.cookie = `${name}=${value}; path=/; max-age=${maxAge}`;
+    return true;
+  } catch (error) {
+    console.error('Error setting cookie:', error);
+    return false;
+  }
+};

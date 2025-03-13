@@ -91,9 +91,9 @@ export function KeywordResearchSimple() {
       setResults(data.data || [])
       setTimestamp(new Date().toLocaleString())
       console.log("Results set:", data.data)
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Error fetching results:", err)
-      setError(err.message)
+      setError(err instanceof Error ? err.message : String(err))
       setResults([])
     } finally {
       setIsLoading(false)
@@ -104,19 +104,20 @@ export function KeywordResearchSimple() {
   const filteredResults = results.filter((result) => result.keyword.toLowerCase().includes(searchQuery.toLowerCase()))
 
   // Format number helper
-  const formatNumber = (num) => {
+  const formatNumber = (num: number): string => {
     if (!num && num !== 0) return "0"
     return new Intl.NumberFormat().format(num)
   }
 
-  // Export to CSV
+  // Export to CSV function
   const exportToCsv = () => {
-    if (!filteredResults.length) return
+    if (!results.length) return
 
+    // Create CSV content
     const headers = ["Keyword", "Search Volume", "CPC", "Competition", "Difficulty", "Level"]
     const csvData = [
       headers.join(","),
-      ...filteredResults.map((result) =>
+      ...results.map((result) =>
         [
           `"${result.keyword}"`,
           result.search_volume,
@@ -128,15 +129,13 @@ export function KeywordResearchSimple() {
       ),
     ].join("\n")
 
-    const blob = new Blob([csvData], { type: "text/csv" })
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `keyword-research-${new Date().toISOString()}.csv`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
+    import('@/utils/client-utils').then(({ downloadFile }) => {
+      downloadFile(
+        csvData,
+        `keyword-research-${new Date().toISOString()}.csv`,
+        'text/csv'
+      );
+    });
   }
 
   // Render form fields based on selected mode
@@ -355,4 +354,3 @@ export function KeywordResearchSimple() {
     </div>
   )
 }
-

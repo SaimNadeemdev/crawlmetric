@@ -198,6 +198,17 @@ export default function KeywordResearch() {
     }
   };
 
+  // Download CSV function
+  const downloadCSV = (csvContent: string) => {
+    import('@/utils/client-utils').then(({ downloadFile }) => {
+      downloadFile(
+        csvContent,
+        `keyword_research_${mode}_${new Date().toISOString().slice(0,10)}.csv`,
+        'text/csv;charset=utf-8;'
+      );
+    });
+  };
+
   // Export results to CSV
   const handleExportCSV = () => {
     if (results.length === 0) return;
@@ -217,16 +228,7 @@ export default function KeywordResearch() {
       csvContent += values.join(',') + '\n';
     });
     
-    // Create download link
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `keyword_research_${mode}_${new Date().toISOString().slice(0,10)}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadCSV(csvContent);
   };
 
   // Validate form before submission
