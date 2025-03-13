@@ -9,10 +9,8 @@ import { GradientHeading } from "@/components/ui/gradient-heading"
 // Force dynamic rendering to prevent serialization errors
 export const dynamic = 'force-dynamic';
 
-export const metadata: Metadata = {
-  title: "Site Audit Results | SEO Tool",
-  description: "View the results of your website SEO audit",
-}
+// Metadata can't be exported from a client component
+// We'll need to move this to a separate layout.tsx file or remove it
 
 export default async function SiteAuditResultsPage({
   searchParams,

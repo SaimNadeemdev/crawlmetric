@@ -1,3 +1,4 @@
+"use client"
 
 // Force dynamic rendering to prevent serialization errors
 export const dynamic = 'force-dynamic';
@@ -6,8 +7,6 @@ export const dynamic = 'force-dynamic';
 // I will assume the variables are used within the component's logic.  Without the original code,
 // I will declare the variables at the top of the component scope to resolve the errors.  This is a
 // placeholder solution and may need adjustment based on the actual code.
-
-"use client"
 
 const KeywordResearchPage = () => {
   // Declare the missing variables.  These are placeholders and may need to be adjusted
@@ -27,4 +26,3 @@ const KeywordResearchPage = () => {
 }
 
 export default KeywordResearchPage
-
