@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { useAuth } from "@/lib/auth-provider"
 import { Button } from "@/components/ui/button"
@@ -24,10 +24,14 @@ export function BlackMirrorNavbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const pathname = usePathname()
-  const { user, logout } = useAuth()
+  const router = useRouter()
+  const { user, signOut } = useAuth()
 
-  // Handle scroll effect
+  // Handle scroll events to change navbar appearance
   useEffect(() => {
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return;
+    
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20)
     }
@@ -49,7 +53,10 @@ export function BlackMirrorNavbar() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/">
-              <IOSLogo variant="black-mirror" />
+              <div className="flex items-center">
+                <IOSLogo className="h-8 w-8 text-blue-500" />
+                <span className="ml-2 text-lg font-semibold tracking-tight text-white">CrawlMetric</span>
+              </div>
             </Link>
 
             {/* Desktop Navigation */}
@@ -138,7 +145,11 @@ export function BlackMirrorNavbar() {
                   <Button
                     variant="ghost"
                     className="text-gray-400 hover:text-white relative overflow-hidden group"
-                    onClick={logout}
+                    onClick={() => {
+                      signOut().then(() => {
+                        router.push("/")
+                      })
+                    }}
                   >
                     <span className="relative z-10 flex items-center">
                       <LogOut className="h-4 w-4 mr-2" />
@@ -151,8 +162,8 @@ export function BlackMirrorNavbar() {
                   </Button>
                   <div className="relative">
                     <Avatar className="h-8 w-8 ring-1 ring-white/10 hover:ring-blue-500/50 transition-all duration-300">
-                      <AvatarImage src="/placeholder-user.jpg" alt={user.name} />
-                      <AvatarFallback className="bg-black text-blue-500">{user.name.charAt(0)}</AvatarFallback>
+                      <AvatarImage src={user?.user_metadata?.avatar_url || ""} alt="User" />
+                      <AvatarFallback className="bg-black text-blue-500">{user?.email?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
                     </Avatar>
                     <motion.div
                       className="absolute -inset-1 rounded-full bg-blue-500/20 blur-sm opacity-0 group-hover:opacity-100"
@@ -274,26 +285,25 @@ export function BlackMirrorNavbar() {
                 {user ? (
                   <div className="mt-6 pt-6 border-t border-white/10">
                     <div className="flex items-center space-x-3 px-4 py-3">
-                      <Avatar className="h-10 w-10 ring-1 ring-white/10">
-                        <AvatarImage src="/placeholder-user.jpg" alt={user.name} />
-                        <AvatarFallback className="bg-black text-blue-500">{user.name.charAt(0)}</AvatarFallback>
+                      <Avatar className="h-10 w-10 mr-2">
+                        <AvatarImage src={user?.user_metadata?.avatar_url || ""} alt="User" />
+                        <AvatarFallback className="bg-black text-blue-500">{user?.email?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
                       </Avatar>
-                      <div>
-                        <div className="text-sm font-medium text-white">{user.name}</div>
-                        <div className="text-xs text-gray-400">{user.email}</div>
+                      <div className="flex flex-col space-y-1 leading-none">
+                        <p className="font-medium">{user?.email || "User"}</p>
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      className="w-full mt-2 text-gray-400 hover:text-white border border-white/5 hover:border-white/10"
+                    <button
                       onClick={() => {
-                        logout()
-                        setIsOpen(false)
+                        signOut().then(() => {
+                          router.push("/")
+                        })
                       }}
+                      className="flex w-full items-center gap-2 px-2 py-1.5 text-sm text-white/80 hover:text-white transition-colors"
                     >
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Logout
-                    </Button>
+                      <LogOut className="h-4 w-4" />
+                      <span>Log out</span>
+                    </button>
                   </div>
                 ) : (
                   <div className="mt-6 pt-6 border-t border-white/10 space-y-2">

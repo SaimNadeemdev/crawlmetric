@@ -18,6 +18,10 @@ import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import { AnimatedTitle } from "@/components/client-success-section"
 
+// Force dynamic rendering to prevent serialization errors
+export const dynamic = 'force-dynamic';
+
+
 export default function SeoAuditPage() {
   const searchParams = useSearchParams()
   const router = useRouter()

@@ -6,6 +6,7 @@ import { Copy, Download, Check } from "lucide-react"
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { toast } from "sonner"
+import { isClient, copyToClipboard } from "@/utils/client-utils"
 
 interface ContentResultCardProps {
   title: string
@@ -29,7 +30,7 @@ export function ContentResultCard({
     if (onCopy) {
       onCopy();
     } else {
-      navigator.clipboard.writeText(content);
+      copyToClipboard(content);
     }
     setCopied(true);
     toast.success("Copied to clipboard!");

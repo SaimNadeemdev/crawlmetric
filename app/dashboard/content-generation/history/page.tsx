@@ -4,6 +4,10 @@ import ContentGenerationHistory from "@/components/content-generation/content-ge
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"
 import { DashboardHeader } from "@/components/dashboard/dashboard-header"
 
+// Force dynamic rendering to prevent serialization errors
+export const dynamic = 'force-dynamic';
+
+
 export default function ContentGenerationHistoryPage() {
   return (
     <DashboardShell>

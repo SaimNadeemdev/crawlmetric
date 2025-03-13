@@ -17,6 +17,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   constructor(props: ErrorBoundaryProps) {
     super(props)
     this.state = { hasError: false, error: null }
+    this.handleReload = this.handleReload.bind(this)
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
@@ -27,6 +28,13 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     // You can log the error to an error reporting service
     console.error("Error caught by ErrorBoundary:", error, errorInfo)
+  }
+
+  handleReload() {
+    // Safe way to reload the page
+    if (typeof window !== 'undefined') {
+      window.location.reload()
+    }
   }
 
   render(): React.ReactNode {
@@ -40,7 +48,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           <Button onClick={() => this.setState({ hasError: false, error: null })} className="mb-4">
             Try again
           </Button>
-          <Button variant="outline" onClick={() => window.location.reload()}>
+          <Button variant="outline" onClick={this.handleReload}>
             Reload page
           </Button>
         </div>
@@ -50,4 +58,3 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     return this.props.children
   }
 }
-

@@ -9,6 +9,10 @@ import { LighthouseAuditForm } from "@/components/seo-audit/lighthouse-audit-for
 import LighthouseResults from "@/components/seo-audit/lighthouse-results-fixed"
 import { ClientProviders } from "@/components/providers/client-providers"
 
+// Force dynamic rendering to prevent serialization errors
+export const dynamic = 'force-dynamic';
+
+
 export default function SeoAuditPage() {
   const [activeTab, setActiveTab] = useState("instant")
   const [activeLighthouseTaskId, setActiveLighthouseTaskId] = useState<string | null>(null)

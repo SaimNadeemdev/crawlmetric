@@ -51,6 +51,9 @@ export function KeywordResearchProvider({ children }: { children: React.ReactNod
 
   // Load search history from localStorage on mount
   useEffect(() => {
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return;
+    
     try {
       const storedHistory = localStorage.getItem("keyword_research_history")
       if (storedHistory) {
@@ -68,6 +71,9 @@ export function KeywordResearchProvider({ children }: { children: React.ReactNod
 
   // Save search history to localStorage when it changes
   useEffect(() => {
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return;
+    
     try {
       localStorage.setItem("keyword_research_history", JSON.stringify(searchHistory))
     } catch (error) {
@@ -114,7 +120,9 @@ export function KeywordResearchProvider({ children }: { children: React.ReactNod
         setSearchHistory(newHistory)
 
         // Update localStorage as well
-        localStorage.setItem("keyword_research_history", JSON.stringify(newHistory))
+        if (typeof window !== 'undefined') {
+          localStorage.setItem("keyword_research_history", JSON.stringify(newHistory))
+        }
       }
     } catch (error) {
       console.error("Error loading history from database:", error)

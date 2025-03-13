@@ -3,6 +3,10 @@ import { ContactForm } from "@/components/contact-form"
 import { Mail, Phone, MapPin } from "lucide-react"
 import { SiteFooter } from "@/components/site-footer"
 
+// Force dynamic rendering to prevent serialization errors
+export const dynamic = 'force-dynamic';
+
+
 export const metadata: Metadata = {
   title: "Contact Us | Crawl Metric",
   description: "Get in touch with our team for support, feedback, or inquiries about our SEO tools.",

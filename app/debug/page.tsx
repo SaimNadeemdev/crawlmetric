@@ -5,6 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getKeywordsForSite } from "@/lib/dataforseo-keywords-api";
 
+// Force dynamic rendering to prevent serialization errors
+export const dynamic = 'force-dynamic';
+
+
 // Copy of the flattenApiResponse function from keyword-research-results.tsx
 const flattenApiResponse = (data: any) => {
   console.log("Flattening API response:", typeof data, Array.isArray(data));

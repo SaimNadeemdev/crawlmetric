@@ -18,6 +18,10 @@ import { PageHeader } from "@/components/page-header"
 import { formatDate } from "@/lib/utils"
 import { useToast } from "@/components/ui/use-toast"
 
+// Force dynamic rendering to prevent serialization errors
+export const dynamic = 'force-dynamic';
+
+
 export default function KeywordResearchHistoryPage() {
   return (
     <KeywordResearchProvider>

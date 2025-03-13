@@ -49,7 +49,9 @@ export async function startSiteAudit(url: string) {
           max_crawl_pages: 100, // Limit the number of pages to crawl
           load_resources: true,
           enable_javascript: true,
-          custom_js: "meta = {}; meta.url = document.URL; meta;",
+          // Use a string that will be executed on the client side only
+          // Avoid using window directly in server components
+          custom_js: "(function() { var meta = {}; try { meta.url = document.URL || ''; } catch(e) { meta.url = ''; } return meta; })();",
         },
       ]),
     })
@@ -281,4 +283,3 @@ export async function getPagesWithIssues(taskId: string) {
     }
   }
 }
-

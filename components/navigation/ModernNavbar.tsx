@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion"
 import { useAuth } from "@/lib/auth-provider"
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,7 @@ export function ModernNavbar() {
   const [isScrolled, setIsScrolled] = useState(false)
   const pathname = usePathname()
   const { user, signOut } = useAuth()
+  const router = useRouter()
   const navRef = useRef<HTMLDivElement>(null)
 
   // Spring animation for navbar height
@@ -32,6 +33,9 @@ export function ModernNavbar() {
   const springNavHeight = useSpring(navHeight, { stiffness: 300, damping: 30 })
 
   useEffect(() => {
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return
+    
     const handleScroll = () => {
       const scrolled = window.scrollY > 20
       setIsScrolled(scrolled)
@@ -40,6 +44,17 @@ export function ModernNavbar() {
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [navHeight])
+
+  useEffect(() => {
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return
+    
+    const handleResize = () => {
+      // Add your resize logic here
+    }
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
 
   // Only show menu items when user is logged in
   const menuItems = user ? [...publicMenuItems, ...authenticatedMenuItems] : []

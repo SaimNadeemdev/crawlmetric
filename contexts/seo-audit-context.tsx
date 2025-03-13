@@ -459,6 +459,9 @@ export function SeoAuditProvider({ children }: { children: ReactNode }) {
 
   // Load tasks from localStorage on mount
   useEffect(() => {
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return;
+    
     try {
       const storedTasks = localStorage.getItem("seo_audit_tasks")
       if (storedTasks) {
@@ -479,6 +482,9 @@ export function SeoAuditProvider({ children }: { children: ReactNode }) {
 
   // Save tasks to localStorage when they change
   useEffect(() => {
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return;
+    
     try {
       localStorage.setItem("seo_audit_tasks", JSON.stringify(siteAuditTasks))
     } catch (error) {
@@ -487,6 +493,9 @@ export function SeoAuditProvider({ children }: { children: ReactNode }) {
   }, [siteAuditTasks])
 
   useEffect(() => {
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return;
+    
     try {
       if (activeSiteAuditTask) {
         localStorage.setItem("active_seo_audit_task", activeSiteAuditTask)

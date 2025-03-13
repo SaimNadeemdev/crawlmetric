@@ -37,6 +37,10 @@ import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { AnimatedTitle } from "@/components/client-success-section"
 
+// Force dynamic rendering to prevent serialization errors
+export const dynamic = 'force-dynamic';
+
+
 // Initialize Supabase client with hardcoded credentials for client-side use
 const supabaseUrl = 'https://nzxgnnpthtefahosnolm.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56eGdubnB0aHRlZmFob3Nub2xtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEzMDQ1MDcsImV4cCI6MjA1Njg4MDUwN30.kPPrr1NaDkl1OxP9g0oO9l2tWnKWNw2h4LXiDD7v3Mg'

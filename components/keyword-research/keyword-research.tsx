@@ -88,33 +88,38 @@ export default function KeywordResearch() {
     loadHistory,
     clearHistory,
     isHistoryLoading,
-    addToHistory
+    addToHistory,
   } = useKeywordResearch()
 
   // Canvas reference for animated background
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [mounted, setMounted] = useState(false)
+  const animationRef = useRef<number | null>(null)
 
-  // Initialize animated background
+  // Initialize canvas and animation
   useEffect(() => {
-    setMounted(true)
-    
-    if (!canvasRef.current) return
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return;
     
     const canvas = canvasRef.current
+    if (!canvas) return
+
     const ctx = canvas.getContext('2d')
     if (!ctx) return
-    
-    // Set canvas dimensions
+
+    // Set canvas dimensions to match window
     const resizeCanvas = () => {
-      if (!canvas) return
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+      if (canvas) {
+        canvas.width = window.innerWidth
+        canvas.height = window.innerHeight
+      }
     }
-    
+
+    // Initial resize
     resizeCanvas()
-    window.addEventListener('resize', resizeCanvas)
     
+    // Add resize listener
+    window.addEventListener('resize', resizeCanvas)
+
     // Create dots
     const dots: { x: number; y: number; radius: number; opacity: number; speed: number }[] = []
     
@@ -129,8 +134,6 @@ export default function KeywordResearch() {
     }
     
     // Animation loop
-    let animationFrameId: number
-    
     const animate = () => {
       if (!ctx || !canvas) return
       
@@ -153,16 +156,22 @@ export default function KeywordResearch() {
         }
       })
       
-      animationFrameId = requestAnimationFrame(animate)
+      animationRef.current = requestAnimationFrame(animate)
     }
     
     animate()
     
+    // Clean up animation and event listeners
     return () => {
-      window.removeEventListener('resize', resizeCanvas)
-      cancelAnimationFrame(animationFrameId)
+      if (animationRef.current !== null) {
+        cancelAnimationFrame(animationRef.current)
+      }
+      // Safe check for browser environment
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('resize', resizeCanvas)
+      }
     }
-  }, [mounted])
+  }, [])
 
   // State for form inputs
   const [mode, setMode] = useState<ResearchMode>("keyword_suggestions")
@@ -1018,6 +1027,9 @@ export default function KeywordResearch() {
 
   // Function to handle deleting a history item
   const handleDeleteHistory = (index: number) => {
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return;
+    
     // Create a new array without the item at the specified index
     const newHistory = [...searchHistory];
     newHistory.splice(index, 1);
@@ -1043,16 +1055,48 @@ export default function KeywordResearch() {
 
   // Load search history from local storage on component mount
   useEffect(() => {
-    const savedHistory = localStorage.getItem("keywordResearchHistory");
-    if (savedHistory) {
-      try {
-        // We don't need to do anything here as the context already loads the history
-        console.log("History will be loaded by the context");
-      } catch (error) {
-        console.error("Error parsing search history:", error);
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return;
+    
+    // Use the loadHistory function from context
+    loadHistory().catch(error => {
+      console.error("Error loading history:", error);
+    });
+  }, [loadHistory]);
+
+  // Save research results to history
+  const saveToHistory = (data: any[], mode: ResearchMode, keyword: string, url: string) => {
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return;
+    
+    // Create history item
+    const historyItem: KeywordResearchResults = {
+      id: Date.now().toString(),
+      timestamp: new Date().toLocaleString(),
+      mode,
+      data: data,
+    };
+    
+    // Add to context history using the addToHistory function from context
+    addToHistory(historyItem);
+    
+    // Get existing history
+    let history: KeywordResearchResults[] = [];
+    try {
+      const savedHistory = localStorage.getItem("keywordResearchHistory");
+      if (savedHistory) {
+        history = JSON.parse(savedHistory);
       }
+    } catch (error) {
+      console.error("Error parsing history:", error);
     }
-  }, []);
+    
+    // Add new item to history (limit to 20 items)
+    const newHistory = [historyItem, ...history].slice(0, 20);
+    
+    // Save the updated history to localStorage
+    localStorage.setItem("keywordResearchHistory", JSON.stringify(newHistory));
+  };
 
   return (
     <div className="relative bg-white">

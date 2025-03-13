@@ -99,3 +99,20 @@ export const addStyleToHead = (styles: string): (() => void) => {
     }
   };
 };
+
+/**
+ * Safely copy text to clipboard on the client side
+ * @param text Text to copy to clipboard
+ * @returns Boolean indicating success
+ */
+export const copyToClipboard = (text: string): boolean => {
+  if (!isClient) return false;
+  
+  try {
+    navigator.clipboard.writeText(text);
+    return true;
+  } catch (error) {
+    console.error('Error copying to clipboard:', error);
+    return false;
+  }
+};

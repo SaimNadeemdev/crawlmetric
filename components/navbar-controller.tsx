@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { ModernNavbar } from "@/components/modern-navbar"
 
 export function NavbarController() {
@@ -16,6 +16,9 @@ export function NavbarController() {
                            pathname.includes('/seo-audit')
     
     setShouldShow(!isDashboardPage)
+    
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return
     
     // For client-side navigation that might not trigger a full component re-render
     const handleRouteChange = () => {
@@ -33,6 +36,8 @@ export function NavbarController() {
     
     // Clean up
     return () => {
+      // Safe check for browser environment
+      if (typeof window === 'undefined') return
       window.removeEventListener('popstate', handleRouteChange)
     }
   }, [pathname])

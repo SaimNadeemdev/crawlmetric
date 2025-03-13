@@ -1,3 +1,7 @@
+
+// Force dynamic rendering to prevent serialization errors
+export const dynamic = 'force-dynamic';
+
 // Since the existing code was omitted for brevity and the updates indicate undeclared variables,
 // I will assume the variables are used within the component's logic.  Without the original code,
 // I will declare the variables at the top of the component scope to resolve the errors.  This is a

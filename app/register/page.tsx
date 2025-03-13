@@ -2,9 +2,12 @@
 
 import type React from "react"
 
+// Force dynamic rendering to prevent serialization errors
+export const dynamic = 'force-dynamic';
+
 import { useState, useEffect, useRef } from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -82,6 +85,9 @@ function RegisterPage() {
 
     // Set canvas dimensions
     const resizeCanvas = () => {
+      // Safe check for browser environment
+      if (typeof window === 'undefined' || !canvas) return
+      
       canvas.width = window.innerWidth
       canvas.height = window.innerHeight
     }
@@ -130,11 +136,15 @@ function RegisterPage() {
       animationFrameId = requestAnimationFrame(animate)
     }
 
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return
     window.addEventListener("resize", resizeCanvas)
     resizeCanvas()
     animate()
 
     return () => {
+      // Safe check for browser environment
+      if (typeof window === 'undefined') return
       window.removeEventListener("resize", resizeCanvas)
       cancelAnimationFrame(animationFrameId)
     }

@@ -19,6 +19,10 @@ import type { Keyword } from "@/types/keyword"
 import DashboardLayout from "@/app/dashboard-layout"
 import { createClient } from "@supabase/supabase-js"
 
+// Force dynamic rendering to prevent serialization errors
+export const dynamic = 'force-dynamic';
+
+
 export default function DashboardPage() {
   const router = useRouter()
   const searchParams = useSearchParams()

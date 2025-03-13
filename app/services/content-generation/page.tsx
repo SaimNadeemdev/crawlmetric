@@ -1,3 +1,7 @@
+
+// Force dynamic rendering to prevent serialization errors
+export const dynamic = 'force-dynamic';
+
 // Since the original code is not provided, I will declare the missing variables at the top of the file.
 // This is a placeholder and should be replaced with the actual code.
 

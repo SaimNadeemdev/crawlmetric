@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   FileText,
@@ -249,6 +249,8 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
       icon: Settings,
     },
   ]
+
+  const router = useRouter()
 
   return (
     <>
@@ -498,7 +500,7 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
                 onClick={() => {
                   // Handle logout
                   signOut().then(() => {
-                    window.location.href = "/"
+                    router.push("/")
                   })
                 }}
                 className={`group relative flex w-full h-14 items-center gap-3 rounded-[22px] px-5 transition-all duration-300 text-gray-700 hover:bg-white/70 hover:text-gray-900 hover:shadow-sm`}

@@ -17,6 +17,10 @@ import { AnimatedTitle } from "@/components/client-success-section"
 import { ClientProviders } from "@/components/providers/client-providers"
 import { isClient } from "@/utils/client-utils"
 
+// Force dynamic rendering to prevent serialization errors
+export const dynamic = 'force-dynamic';
+
+
 export default function ContentGenerationPage() {
   const [activeTab, setActiveTab] = useState("generate-text")
   const [mounted, setMounted] = useState(false)

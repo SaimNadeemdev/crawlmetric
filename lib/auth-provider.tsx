@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react"
 import { createClient } from "@supabase/supabase-js"
 import type { Session, User } from "@supabase/supabase-js"
 import { usePathname, useRouter } from "next/navigation"
+import { isClient } from "@/utils/client-utils"
 
 // Use hardcoded Supabase credentials for client-side
 const supabaseUrl = 'https://nzxgnnpthtefahosnolm.supabase.co'
@@ -38,22 +39,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Initial session check
   useEffect(() => {
+    // Skip if not in browser environment
+    if (!isClient) {
+      setIsLoading(false)
+      return
+    }
+    
     const checkSession = async () => {
       try {
         console.log("Auth provider - Checking session")
         
         // Check for session in localStorage first
-        const storedSession = localStorage.getItem('supabase.auth.token')
-        if (storedSession) {
-          console.log("Found stored session in localStorage")
-          try {
-            // Try to parse and use the stored session
-            const parsedSession = JSON.parse(storedSession)
-            if (parsedSession && parsedSession.access_token) {
-              console.log("Using stored session from localStorage")
+        if (isClient) {
+          const storedSession = localStorage.getItem('supabase.auth.token')
+          if (storedSession) {
+            console.log("Found stored session in localStorage")
+            try {
+              // Try to parse and use the stored session
+              const parsedSession = JSON.parse(storedSession)
+              if (parsedSession && parsedSession.access_token) {
+                console.log("Using stored session from localStorage")
+              }
+            } catch (e) {
+              console.error("Error parsing stored session:", e)
             }
-          } catch (e) {
-            console.error("Error parsing stored session:", e)
           }
         }
         
@@ -73,7 +82,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(data.session.user)
           
           // Store session in localStorage as backup
-          localStorage.setItem('supabase.auth.token', JSON.stringify(data.session))
+          if (isClient) {
+            localStorage.setItem('supabase.auth.token', JSON.stringify(data.session))
+          }
         }
       } catch (error) {
         console.error("Unexpected error checking session:", error)
@@ -92,11 +103,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(session.user)
           
           // Store session in localStorage as backup
-          localStorage.setItem('supabase.auth.token', JSON.stringify(session))
+          if (isClient) {
+            localStorage.setItem('supabase.auth.token', JSON.stringify(session))
+          }
         } else {
           setSession(null)
           setUser(null)
-          localStorage.removeItem('supabase.auth.token')
+          if (isClient) {
+            localStorage.removeItem('supabase.auth.token')
+          }
         }
         
         setIsLoading(false)
@@ -110,19 +125,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  // Handle auth state changes and redirect if needed
+  // Redirect unauthenticated users from protected routes
   useEffect(() => {
-    // Check if user is logged out and on a protected route
-    if (!isLoading && !user && pathname && (
-      pathname.startsWith('/dashboard') || 
-      pathname.startsWith('/app') || 
-      pathname.startsWith('/settings')
-    )) {
+    // Skip during loading to prevent flashing redirects
+    if (isLoading) return
+    
+    // Define protected routes that require authentication
+    const protectedRoutes = [
+      '/dashboard',
+      '/services',
+    ]
+    
+    // Check if current path is a protected route
+    const isProtectedRoute = protectedRoutes.some(route => pathname?.startsWith(route))
+    
+    if (isProtectedRoute && !user) {
       console.log("User not authenticated but on protected route. Redirecting to home page.");
-      // Use replace to prevent back navigation to protected pages
-      window.location.replace('/');
+      // Use router.push instead of window.location.replace
+      router.push('/');
     }
-  }, [user, isLoading, pathname]);
+  }, [user, isLoading, pathname, router]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -144,7 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })
       
       // Store session in localStorage as backup
-      if (data.session) {
+      if (isClient) {
         localStorage.setItem('supabase.auth.token', JSON.stringify(data.session))
       }
       
@@ -190,14 +212,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       await supabase.auth.signOut()
-      localStorage.removeItem('supabase.auth.token')
+      if (isClient) {
+        localStorage.removeItem('supabase.auth.token')
+      }
       
-      // Force redirect to home page after logout
-      window.location.replace('/');
+      // Use router.push instead of window.location.replace
+      router.push('/');
     } catch (error) {
       console.error("Sign out error:", error)
       // Even on error, try to redirect
-      window.location.replace('/');
+      router.push('/');
     }
   }
 

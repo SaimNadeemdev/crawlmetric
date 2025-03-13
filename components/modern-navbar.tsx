@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { useAuth } from "@/lib/auth-provider"
 import { Button } from "@/components/ui/button"
@@ -14,13 +14,50 @@ import { LogOut, LayoutDashboard } from "lucide-react"
 export function ModernNavbar() {
   const [isScrolled, setIsScrolled] = useState(false)
   const { user, signOut } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return
+    
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20)
     }
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
+  }, [])
+
+  useEffect(() => {
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return
+    
+    const handleResize = () => {
+      // Add your resize event logic here
+    }
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
+
+  useEffect(() => {
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return
+    
+    const handleLoad = () => {
+      // Add your load event logic here
+    }
+    window.addEventListener("load", handleLoad)
+    return () => window.removeEventListener("load", handleLoad)
+  }, [])
+
+  useEffect(() => {
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return
+    
+    const handleUnload = () => {
+      // Add your unload event logic here
+    }
+    window.addEventListener("unload", handleUnload)
+    return () => window.removeEventListener("unload", handleUnload)
   }, [])
 
   // Handle logout and redirect
@@ -29,18 +66,12 @@ export function ModernNavbar() {
       // First perform the signOut operation
       await signOut();
       
-      // Force a complete page reload and redirect to homepage
-      // This ensures the auth state is completely refreshed
-      window.location.replace('/');
-      
-      // As a fallback, add a small timeout and force reload if redirect doesn't happen
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
+      // Use router for navigation instead of window.location
+      router.push('/');
     } catch (error) {
       console.error("Logout error:", error);
       // Even if there's an error, try to redirect
-      window.location.replace('/');
+      router.push('/');
     }
   }
 

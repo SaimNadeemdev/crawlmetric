@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-provider"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -20,12 +20,16 @@ import { Sidebar } from "@/components/sidebar"
 import { IOSLogo } from "./ui/ios-logo"
 
 export default function Header() {
-  const { user, logout } = useAuth()
+  const { user, signOut } = useAuth()
   const pathname = usePathname()
+  const router = useRouter()
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return
+    
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10)
     }
@@ -76,16 +80,15 @@ export default function Header() {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src="/placeholder-user.jpg" alt={user.name} />
-                    <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={user?.user_metadata?.avatar_url || ""} alt="User" />
+                    <AvatarFallback>{user?.email?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <div className="flex items-center justify-start gap-2 p-2">
                   <div className="flex flex-col space-y-1 leading-none">
-                    <p className="font-medium">{user.name}</p>
-                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                    <p className="text-sm font-medium">{user?.email || "User"}</p>
                   </div>
                 </div>
                 <DropdownMenuSeparator />
@@ -108,7 +111,13 @@ export default function Header() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout}>
+                <DropdownMenuItem
+                  onClick={() => {
+                    signOut().then(() => {
+                      router.push("/")
+                    })
+                  }}
+                >
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Log out</span>
                 </DropdownMenuItem>
@@ -132,10 +141,17 @@ export default function Header() {
                 <span className="sr-only">Toggle menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[80%] sm:w-[350px] bg-[#0A0A0B] border-r border-slate-800">
-              <div className="py-4">
-                <Sidebar onNavItemClick={() => setIsMobileMenuOpen(false)} />
-              </div>
+            <SheetContent side="left" className="p-0 w-[280px]">
+              <Sidebar>
+                {navigation.map((item) => (
+                  <div key={item.name} className="px-4 py-2">
+                    <Link href={item.href} className="flex items-center gap-2 text-sm">
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.name}</span>
+                    </Link>
+                  </div>
+                ))}
+              </Sidebar>
             </SheetContent>
           </Sheet>
         </div>

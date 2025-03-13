@@ -2,6 +2,10 @@ import type { Metadata } from "next"
 import SiteAuditForm from "./site-audit-form"
 import { GradientHeading } from "@/components/ui/gradient-heading"
 
+// Force dynamic rendering to prevent serialization errors
+export const dynamic = 'force-dynamic';
+
+
 export const metadata: Metadata = {
   title: "Site Audit | SEO Tool",
   description: "Run a comprehensive SEO audit on your website",

@@ -9,6 +9,9 @@ export function GlobalErrorHandler() {
   const { toast } = useToast()
 
   useEffect(() => {
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return
+    
     const handleError = (event: ErrorEvent) => {
       console.error("Unhandled error caught by GlobalErrorHandler:", event.error)
       // You can also log this to an error tracking service
@@ -24,10 +27,11 @@ export function GlobalErrorHandler() {
     window.addEventListener("error", handleError)
 
     return () => {
+      // Safe check for browser environment
+      if (typeof window === 'undefined') return
       window.removeEventListener("error", handleError)
     }
   }, [toast])
 
   return null
 }
-

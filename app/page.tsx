@@ -5,6 +5,9 @@ import { ClientSuccessSection } from "@/components/client-success-section"
 import { ContactSection } from "@/components/contact-section"
 import { SiteFooter } from "@/components/site-footer"
 
+// Force dynamic rendering to prevent serialization errors
+export const dynamic = 'force-dynamic';
+
 export default function Home() {
   return (
     <div className="flex flex-col min-h-[100dvh]">
@@ -19,4 +22,3 @@ export default function Home() {
     </div>
   )
 }
-

@@ -37,9 +37,6 @@ const nextConfig = {
     DATAFORSEO_API_ID: process.env.crawlmetric_DATAFORSEO_API_ID,
     DATAFORSEO_API_KEY: process.env.crawlmetric_DATAFORSEO_API_KEY
   },
-  unstable_excludeFiles: [
-    '**/node_modules/ws/**/*',
-  ],
   async headers() {
     return [
       {

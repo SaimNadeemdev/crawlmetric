@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -11,9 +12,13 @@ interface KeywordSectionWrapperProps {
 export function KeywordSectionWrapper({ children }: KeywordSectionWrapperProps) {
   const [hasError, setHasError] = useState(false)
   const [errorInfo, setErrorInfo] = useState<string | null>(null)
+  const router = useRouter()
 
   // Add a global error handler for this section
   useEffect(() => {
+    // Safe check for browser environment
+    if (typeof window === 'undefined') return
+    
     const handleError = (event: ErrorEvent) => {
       console.error("Error caught by KeywordSectionWrapper:", event.error)
       setHasError(true)
@@ -42,6 +47,13 @@ export function KeywordSectionWrapper({ children }: KeywordSectionWrapperProps) 
     }
   }, [])
 
+  // Function to safely reload the page
+  const handleReload = () => {
+    if (typeof window !== 'undefined') {
+      window.location.reload()
+    }
+  }
+
   if (hasError) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] p-6 text-center bg-black/40 backdrop-blur-md border border-white/5 rounded-xl shadow-lg">
@@ -60,7 +72,7 @@ export function KeywordSectionWrapper({ children }: KeywordSectionWrapperProps) 
           </Button>
           <Button 
             variant="outline" 
-            onClick={() => window.location.reload()}
+            onClick={handleReload}
             className="rounded-xl border-white/5 bg-black/40 hover:bg-white/5 hover:text-white transition-all duration-300"
           >
             Reload page
@@ -70,5 +82,5 @@ export function KeywordSectionWrapper({ children }: KeywordSectionWrapperProps) 
     )
   }
 
-  return <React.Fragment>{children}</React.Fragment>
+  return <>{children}</>
 }

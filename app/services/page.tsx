@@ -5,6 +5,10 @@ import { Button } from "@/components/ui/button"
 import { GradientHeading } from "@/components/ui/gradient-heading"
 import { Search, FileText, BarChart3, Globe } from "lucide-react"
 
+// Force dynamic rendering to prevent serialization errors
+export const dynamic = 'force-dynamic';
+
+
 export const metadata: Metadata = {
   title: "SEO Services | SEO Tool",
   description: "Explore our range of SEO services to improve your website's search engine rankings",
