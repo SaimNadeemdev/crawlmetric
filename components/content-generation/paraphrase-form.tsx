@@ -254,22 +254,8 @@ export function ParaphraseForm() {
                               step={0.05}
                               defaultValue={[field.value]}
                               onValueChange={(value) => field.onChange(value[0])}
-                              className="relative z-10"
+                              className="relative z-10 custom-slider"
                             />
-                            <style jsx global>{
-                              `
-                              .slider-thumb {
-                                height: 24px;
-                                width: 24px;
-                                background: white;
-                                border: 2px solid #0071e3;
-                                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                              }
-                              .slider-track {
-                                background: linear-gradient(to right, #0071e3, #40a9ff);
-                              }
-                              `
-                            }</style>
                           </div>
                         </FormControl>
                         <div className="flex justify-between text-sm text-gray-500 px-1">
@@ -384,21 +370,32 @@ export function ParaphraseForm() {
       </AnimatePresence>
 
       {/* Inject CSS styles */}
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         /* Base styles that would normally be in globals.css */
         body {
           background-color: #ffffff;
-          color: #222222;
-          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
         }
         
-        /* Animation keyframes */
-        @keyframes gradient-animation {
+        /* Animation */
+        @keyframes gradient {
           0% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
-      `}</style>
+        
+        /* Custom slider styles */
+        .custom-slider [role="slider"] {
+          height: 24px !important;
+          width: 24px !important;
+          background: white !important;
+          border: 2px solid #0071e3 !important;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+        }
+        
+        .custom-slider [data-orientation="horizontal"] {
+          background: linear-gradient(to right, #0071e3, #40a9ff) !important;
+        }
+      ` }} />
     </div>
   )
 }

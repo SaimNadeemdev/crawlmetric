@@ -254,7 +254,7 @@ export function TextAnalysisForm() {
               >
                 <CardHeader className="space-y-2 pb-6 pt-8 px-8">
                   <div className="flex items-center gap-4 mb-2">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#40a9ff] shadow-md">
+                    <div className="flex-shrink-0 h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0071e3] to-[#40a9ff] shadow-md">
                       <FileText className="h-7 w-7 text-white" />
                     </div>
                     <div>
@@ -809,7 +809,7 @@ export function TextAnalysisForm() {
       </AnimatePresence>
 
       {/* Inject CSS styles */}
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         /* Base styles that would normally be in globals.css */
         body {
           background-color: #ffffff;
@@ -829,7 +829,7 @@ export function TextAnalysisForm() {
           50% { filter: blur(15px); opacity: 0.7; }
           100% { filter: blur(10px); opacity: 0.5; }
         }
-      `}</style>
+      ` }} />
     </div>
   )
 }
