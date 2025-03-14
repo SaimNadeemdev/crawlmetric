@@ -1,3 +1,5 @@
+"use client"
+
 import { type NextRequest, NextResponse } from "next/server"
 import { adaptDataForSeoResponse } from "@/lib/ai-data-adapter"
 

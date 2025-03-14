@@ -1,3 +1,5 @@
+"use client"
+
 import { NextRequest, NextResponse } from "next/server";
 import { saveTaskHistory } from "@/lib/task-history";
 

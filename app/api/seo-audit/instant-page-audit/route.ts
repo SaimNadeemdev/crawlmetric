@@ -1,3 +1,5 @@
+"use client"
+
 import { type NextRequest, NextResponse } from "next/server"
 
 // Use dynamic route handlers to avoid static generation errors
