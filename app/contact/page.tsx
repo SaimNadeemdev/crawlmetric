@@ -1,6 +1,5 @@
 "use client"
 
-import type { Metadata } from "next"
 import { ContactForm } from "@/components/contact-form"
 import { Mail, Phone, MapPin } from "lucide-react"
 import { SiteFooter } from "@/components/site-footer"
@@ -8,11 +7,8 @@ import { SiteFooter } from "@/components/site-footer"
 // Force dynamic rendering to prevent serialization errors
 export const dynamic = 'force-dynamic';
 
-
-export const metadata: Metadata = {
-  title: "Contact Us | Crawl Metric",
-  description: "Get in touch with our team for support, feedback, or inquiries about our SEO tools.",
-}
+// Metadata can't be exported from a client component
+// We need to move this to a layout file or remove it
 
 export default function ContactPage() {
   return (

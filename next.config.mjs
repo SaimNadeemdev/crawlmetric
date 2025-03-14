@@ -13,10 +13,7 @@ const nextConfig = {
   output: 'standalone',
   experimental: {
     webpackBuildWorker: true,
-    serverActions: {
-      allowedOrigins: ['localhost:3000', 'crawlmetric.vercel.app'],
-      bodySizeLimit: '2mb'
-    },
+    serverActions: true,
   },
   // Configure SWC compiler options
   compiler: {

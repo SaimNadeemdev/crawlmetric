@@ -1,16 +1,12 @@
 "use client"
 
-import type { Metadata } from "next"
 import { SiteFooter } from "@/components/site-footer"
 
 // Force dynamic rendering to prevent serialization errors
 export const dynamic = 'force-dynamic';
 
-
-export const metadata: Metadata = {
-  title: "Privacy Policy | Crawl Metric",
-  description: "Our privacy policy explains how we collect, use, and protect your personal information.",
-}
+// Metadata can't be exported from a client component
+// We need to move this to a layout file or remove it
 
 export default function PrivacyPolicyPage() {
   return (

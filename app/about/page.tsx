@@ -1,17 +1,13 @@
 "use client"
 
-import type { Metadata } from "next"
 import { AnimatedTitle } from "@/components/client-success-section"
 import { SiteFooter } from "@/components/site-footer"
 
 // Force dynamic rendering to prevent serialization errors
 export const dynamic = 'force-dynamic';
 
-
-export const metadata: Metadata = {
-  title: "About Us | Crawl Metric",
-  description: "Learn about our mission to help businesses improve their online visibility and search rankings.",
-}
+// Metadata can't be exported from a client component
+// We need to move this to a layout file or remove it
 
 export default function AboutPage() {
   return (

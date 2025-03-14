@@ -1,6 +1,5 @@
 "use client"
 
-import type { Metadata } from "next"
 import Link from "next/link"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,11 +9,8 @@ import { Search, FileText, BarChart3, Globe } from "lucide-react"
 // Force dynamic rendering to prevent serialization errors
 export const dynamic = 'force-dynamic';
 
-
-export const metadata: Metadata = {
-  title: "SEO Services | SEO Tool",
-  description: "Explore our range of SEO services to improve your website's search engine rankings",
-}
+// Metadata can't be exported from a client component
+// We need to move this to a layout file or remove it
 
 export default function ServicesPage() {
   return (
