@@ -1,9 +1,9 @@
 import localFont from 'next/font/local'
-import { Poppins, Pacifico } from 'next/font/google'
+import { Poppins } from 'next/font/google'
 
 // Custom font for the animated hero heading
-export const pacifico = Pacifico({
-  weight: '400',
+export const pacifico = Poppins({
+  weight: ['700'],
   display: 'swap',
   variable: '--font-pacifico',
   subsets: ['latin'],
