@@ -1,5 +1,3 @@
-"use client"
-
 import { type NextRequest, NextResponse } from "next/server"
 
 // DataForSEO API credentials - hardcoded for all users

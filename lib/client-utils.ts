@@ -182,3 +182,14 @@ export function safeReloadPage() {
     console.error('Error reloading page:', e);
   }
 }
+
+// Safely navigate to a different URL
+export function safeNavigate(url: string) {
+  if (!isBrowser) return;
+  
+  try {
+    window.location.href = url;
+  } catch (e) {
+    console.error('Error navigating to URL:', e);
+  }
+}

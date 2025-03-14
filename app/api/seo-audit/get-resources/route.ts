@@ -1,5 +1,3 @@
-"use client"
-
 import { NextResponse } from "next/server";
 import { getDataForSeoCredentials } from "@/lib/utils";
 

@@ -18,10 +18,10 @@ import Link from "next/link"
 import type { Keyword } from "@/types/keyword"
 import DashboardLayout from "@/app/dashboard-layout"
 import { createClient } from "@supabase/supabase-js"
+import { safeNavigate, safeUpdateUrl, safeGetWindowLocation } from "@/lib/client-utils"
 
 // Force dynamic rendering to prevent serialization errors
 export const dynamic = 'force-dynamic';
-
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -107,9 +107,7 @@ export default function DashboardPage() {
   // Redirect if not authenticated
   useEffect(() => {
     if (!isCheckingSession && !hasSession) {
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login'
-      }
+      safeNavigate('/login')
     }
   }, [hasSession, isCheckingSession])
 
@@ -262,9 +260,9 @@ export default function DashboardPage() {
 
           // Update URL to remove the keyword parameter
           try {
-            const url = new URL(window.location.href)
-            url.searchParams.delete("keyword")
-            window.history.pushState({}, "", url)
+            safeUpdateUrl((url) => {
+              url.searchParams.delete("keyword")
+            })
           } catch (e) {
             console.error("Error updating URL:", e)
           }
@@ -297,9 +295,9 @@ export default function DashboardPage() {
 
       // Update URL without reloading the page
       try {
-        const url = new URL(window.location.href)
-        url.searchParams.set("keyword", keyword.id)
-        window.history.pushState({}, "", url)
+        safeUpdateUrl((url) => {
+          url.searchParams.set("keyword", keyword.id)
+        })
       } catch (error) {
         console.error("Error updating URL:", error)
       }
