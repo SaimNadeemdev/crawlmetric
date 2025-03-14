@@ -50,17 +50,33 @@ export function getWindowDimensions() {
   };
 }
 
+// Safely create an HTML element
+export function createTag(tagName: string, attributes: Record<string, string> = {}) {
+  if (!isBrowser) return null;
+  
+  try {
+    const element = document.createElement(tagName);
+    Object.entries(attributes).forEach(([key, value]) => {
+      element.setAttribute(key, value);
+    });
+    return element;
+  } catch (e) {
+    console.error(`Error creating ${tagName} element:`, e);
+    return null;
+  }
+}
+
 // Safely download a file
 export function downloadFile(content: string, fileName: string, contentType: string) {
   if (!isBrowser) return;
   
   const blob = new Blob([content], { type: contentType });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = fileName;
-  a.click();
-  URL.revokeObjectURL(url);
+  const a = createTag('a', { href: url, download: fileName }) as HTMLAnchorElement;
+  if (a) {
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 }
 
 // Safely set a cookie
