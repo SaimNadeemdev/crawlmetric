@@ -17,6 +17,7 @@ import { createClient } from "@supabase/supabase-js"
 import { motion } from "framer-motion"
 import { AnimatedTitle } from "@/components/client-success-section"
 import { useRef } from "react"
+import { safeWindowAddEventListener, getWindowDimensions } from "@/lib/client-utils"
 
 // Force dynamic rendering to prevent serialization errors
 export const dynamic = 'force-dynamic';
@@ -65,8 +66,9 @@ export default function OverviewPage() {
     let animationFrameId: number
 
     const resizeCanvas = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+      const { width, height } = getWindowDimensions();
+      canvas.width = width;
+      canvas.height = height;
     }
 
     const drawDottedBackground = (t: number) => {
@@ -109,12 +111,12 @@ export default function OverviewPage() {
     resizeCanvas()
     animate()
 
-    // Add resize listener
-    window.addEventListener("resize", resizeCanvas)
+    // Add resize listener safely
+    const cleanupListener = safeWindowAddEventListener("resize", resizeCanvas)
 
     // Clean up
     return () => {
-      window.removeEventListener("resize", resizeCanvas)
+      cleanupListener()
       cancelAnimationFrame(animationFrameId)
     }
   }, [])

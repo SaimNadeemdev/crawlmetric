@@ -36,6 +36,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { AnimatedTitle } from "@/components/client-success-section"
+import { safeWindowAddEventListener, getWindowDimensions, safeWindow, safeUpdateUrl } from "@/lib/client-utils"
 
 // Force dynamic rendering to prevent serialization errors
 export const dynamic = 'force-dynamic';
@@ -43,7 +44,7 @@ export const dynamic = 'force-dynamic';
 
 // Initialize Supabase client with hardcoded credentials for client-side use
 const supabaseUrl = 'https://nzxgnnpthtefahosnolm.supabase.co'
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56eGdubnB0aHRlZmFob3Nub2xtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEzMDQ1MDcsImV4cCI6MjA1Njg4MDUwN30.kPPrr1NaDkl1OxP9g0oO9l2tWnKWNw2h4LXiDD7v3Mg'
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzSIsInJlZiI6Im56eGdubnB0aHRlZmFob3Nub2xtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDEzMDQ1MDcsImV4cCI6MjA1Njg4MDUwN30.kPPrr1NaDkl1OxP9g0oO9l2tWnKWNw2h4LXiDD7v3Mg'
 
 // Create a Supabase client
 const supabase = createClient(supabaseUrl, supabaseKey, {
@@ -350,8 +351,9 @@ export default function KeywordTrackerPage() {
 
     // Set canvas dimensions
     const resizeCanvas = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+      const { width, height } = getWindowDimensions();
+      canvas.width = width;
+      canvas.height = height;
     }
 
     // Create dotted background
@@ -398,12 +400,13 @@ export default function KeywordTrackerPage() {
       animationFrameId = requestAnimationFrame(animate)
     }
 
-    window.addEventListener("resize", resizeCanvas)
+    // Add resize listener safely
+    const cleanupListener = safeWindowAddEventListener("resize", resizeCanvas)
     resizeCanvas()
     animate()
 
     return () => {
-      window.removeEventListener("resize", resizeCanvas)
+      cleanupListener()
       cancelAnimationFrame(animationFrameId)
     }
   }, [mounted])
@@ -457,11 +460,12 @@ export default function KeywordTrackerPage() {
   // Redirect if not authenticated
   useEffect(() => {
     if (!isCheckingSession && !hasSession) {
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login'
+      const win = safeWindow();
+      if (win) {
+        win.location.href = '/login';
       }
     }
-  }, [hasSession, isCheckingSession])
+  }, [isCheckingSession, hasSession])
 
   // Memoize the loadKeywords function to prevent unnecessary re-renders
   const loadKeywords = useCallback(async () => {
@@ -574,13 +578,9 @@ export default function KeywordTrackerPage() {
           setSelectedKeyword(null)
 
           // Update URL to remove the keyword parameter
-          try {
-            const url = new URL(window.location.href)
+          safeUpdateUrl((url) => {
             url.searchParams.delete("keyword")
-            window.history.pushState({}, "", url)
-          } catch (e) {
-            console.error("Error updating URL:", e)
-          }
+          })
         }
 
         toast({
@@ -663,13 +663,9 @@ export default function KeywordTrackerPage() {
       setSelectedKeyword(keyword)
 
       // Update URL without reloading the page
-      try {
-        const url = new URL(window.location.href)
+      safeUpdateUrl((url) => {
         url.searchParams.set("keyword", keyword.id)
-        window.history.pushState({}, "", url)
-      } catch (error) {
-        console.error("Error updating URL:", error)
-      }
+      })
     },
     [user],
   )

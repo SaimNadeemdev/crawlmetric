@@ -19,6 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { ArrowRight, CheckCircle2, AlertCircle, ChevronDown, LockKeyhole } from "lucide-react"
 import { AuthProvider } from "@/lib/auth-provider"
+import { safeWindowAddEventListener, getWindowDimensions } from "@/lib/client-utils"
 
 export default function LoginPageWrapper() {
   return (
@@ -97,8 +98,9 @@ function LoginPage() {
 
     // Set canvas dimensions
     const resizeCanvas = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+      const { width, height } = getWindowDimensions();
+      canvas.width = width;
+      canvas.height = height;
     }
 
     // Initial resize
@@ -148,13 +150,13 @@ function LoginPage() {
       animationFrameId = requestAnimationFrame(animate)
     }
 
-    // Add resize listener
-    window.addEventListener("resize", resizeCanvas)
+    // Add resize listener safely
+    const cleanupListener = safeWindowAddEventListener("resize", resizeCanvas)
 
     animate()
 
     return () => {
-      window.removeEventListener("resize", resizeCanvas)
+      cleanupListener()
       cancelAnimationFrame(animationFrameId)
     }
   }, [mounted])

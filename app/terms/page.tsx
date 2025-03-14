@@ -1,16 +1,9 @@
 "use client"
 
-import type { Metadata } from "next"
 import { SiteFooter } from "@/components/site-footer"
 
 // Force dynamic rendering to prevent serialization errors
 export const dynamic = 'force-dynamic';
-
-
-export const metadata: Metadata = {
-  title: "Terms of Service | Crawl Metric",
-  description: "Our terms of service outline the rules and guidelines for using our platform.",
-}
 
 export default function TermsPage() {
   return (

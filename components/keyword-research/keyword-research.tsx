@@ -76,6 +76,7 @@ import { KeywordResearchResults } from "@/types/keyword-research"
 import { getColumns } from "./columns"
 import { useToast } from "@/components/ui/use-toast"
 import { motion as motionFramer } from "framer-motion"
+import { safeLocalStorage, safeWindowAddEventListener, getWindowDimensions, isBrowser } from "@/lib/client-utils"
 
 type ResearchMode = "keyword_suggestions" | "keywords_for_site" | "historical_search_volume" | "keyword_ideas" | "keywords_for_categories" | "bulk_keyword_difficulty" | "keyword_trends" | "serp_competitors" | "search_intent"
 
@@ -95,30 +96,26 @@ export default function KeywordResearch() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const animationRef = useRef<number | null>(null)
 
-  // Initialize canvas and animation
+  // Initialize canvas background effect
   useEffect(() => {
-    // Safe check for browser environment
-    if (typeof window === 'undefined') return;
-    
+    // Get canvas element
     const canvas = canvasRef.current
-    if (!canvas) return
-
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
+    if (!canvas || !isBrowser) return;
+    
     // Set canvas dimensions to match window
     const resizeCanvas = () => {
       if (canvas) {
-        canvas.width = window.innerWidth
-        canvas.height = window.innerHeight
+        const { width, height } = getWindowDimensions();
+        canvas.width = width;
+        canvas.height = height;
       }
     }
 
     // Initial resize
     resizeCanvas()
     
-    // Add resize listener
-    window.addEventListener('resize', resizeCanvas)
+    // Add resize listener safely
+    const cleanupListener = safeWindowAddEventListener('resize', resizeCanvas)
 
     // Create dots
     const dots: { x: number; y: number; radius: number; opacity: number; speed: number }[] = []
@@ -135,7 +132,10 @@ export default function KeywordResearch() {
     
     // Animation loop
     const animate = () => {
-      if (!ctx || !canvas) return
+      if (!canvas) return
+      
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
       
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       
@@ -161,14 +161,15 @@ export default function KeywordResearch() {
     
     animate()
     
-    // Clean up animation and event listeners
+    // Cleanup function
     return () => {
-      if (animationRef.current !== null) {
+      if (animationRef.current) {
         cancelAnimationFrame(animationRef.current)
       }
-      // Safe check for browser environment
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('resize', resizeCanvas)
+      
+      // Clean up event listener using the returned cleanup function
+      if (cleanupListener) {
+        cleanupListener()
       }
     }
   }, [])
@@ -209,7 +210,8 @@ export default function KeywordResearch() {
 
   // Download CSV function
   const downloadCSV = (csvContent: string) => {
-    import('@/utils/client-utils').then(({ downloadFile }) => {
+    // Use the downloadFile utility from client-utils
+    import('@/lib/client-utils').then(({ downloadFile }) => {
       downloadFile(
         csvContent,
         `keyword_research_${mode}_${new Date().toISOString().slice(0,10)}.csv`,
@@ -1027,15 +1029,17 @@ export default function KeywordResearch() {
 
   // Function to handle deleting a history item
   const handleDeleteHistory = (index: number) => {
-    // Safe check for browser environment
-    if (typeof window === 'undefined') return;
+    if (!isBrowser) return;
     
     // Create a new array without the item at the specified index
     const newHistory = [...searchHistory];
     newHistory.splice(index, 1);
     
-    // Save the updated history to localStorage
-    localStorage.setItem("keywordResearchHistory", JSON.stringify(newHistory));
+    // Save the updated history to localStorage safely
+    const ls = safeLocalStorage();
+    if (ls) {
+      ls.setItem("keywordResearchHistory", JSON.stringify(newHistory));
+    }
     
     // Update the state in the parent context
     // Note: We're not calling loadHistory here as it doesn't accept parameters
@@ -1056,7 +1060,7 @@ export default function KeywordResearch() {
   // Load search history from local storage on component mount
   useEffect(() => {
     // Safe check for browser environment
-    if (typeof window === 'undefined') return;
+    if (!isBrowser) return;
     
     // Use the loadHistory function from context
     loadHistory().catch(error => {
@@ -1066,8 +1070,7 @@ export default function KeywordResearch() {
 
   // Save research results to history
   const saveToHistory = (data: any[], mode: ResearchMode, keyword: string, url: string) => {
-    // Safe check for browser environment
-    if (typeof window === 'undefined') return;
+    if (!isBrowser) return;
     
     // Create history item
     const historyItem: KeywordResearchResults = {
@@ -1083,7 +1086,7 @@ export default function KeywordResearch() {
     // Get existing history
     let history: KeywordResearchResults[] = [];
     try {
-      const savedHistory = localStorage.getItem("keywordResearchHistory");
+      const savedHistory = safeLocalStorage()?.getItem("keywordResearchHistory");
       if (savedHistory) {
         history = JSON.parse(savedHistory);
       }
@@ -1094,8 +1097,11 @@ export default function KeywordResearch() {
     // Add new item to history (limit to 20 items)
     const newHistory = [historyItem, ...history].slice(0, 20);
     
-    // Save the updated history to localStorage
-    localStorage.setItem("keywordResearchHistory", JSON.stringify(newHistory));
+    // Save the updated history to localStorage safely
+    const ls = safeLocalStorage();
+    if (ls) {
+      ls.setItem("keywordResearchHistory", JSON.stringify(newHistory));
+    }
   };
 
   return (

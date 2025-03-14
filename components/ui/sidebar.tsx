@@ -7,7 +7,7 @@ import { PanelLeft } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
-import { setCookie } from "@/utils/client-utils"
+import { setCookie, safeWindowAddEventListener } from "@/lib/client-utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
@@ -99,18 +99,17 @@ const SidebarProvider = React.forwardRef<
 
     // Adds a keyboard shortcut to toggle the sidebar.
     React.useEffect(() => {
-      // Safe check for browser environment
-      if (typeof window === 'undefined') return
-      
-      const handleKeyDown = (event: KeyboardEvent) => {
+      // Use the safe window event listener from client-utils
+      const handleKeyDown = (e: Event) => {
+        // Cast to KeyboardEvent since we know it's a keyboard event
+        const event = e as KeyboardEvent;
         if (event.key === "\\" && (event.metaKey || event.ctrlKey)) {
           event.preventDefault()
           toggleSidebar()
         }
       }
 
-      window.addEventListener("keydown", handleKeyDown)
-      return () => window.removeEventListener("keydown", handleKeyDown)
+      return safeWindowAddEventListener("keydown", handleKeyDown)
     }, [toggleSidebar])
 
     // We add a state so that we can do data-state="expanded" or "collapsed".

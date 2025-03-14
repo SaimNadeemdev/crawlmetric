@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-provider"
 import { Sidebar } from "@/components/sidebar"
 import { createClient } from "@supabase/supabase-js"
+import { safeWindow } from "@/lib/client-utils"
 
 export default function DashboardLayout({
   children,
@@ -67,9 +68,11 @@ export default function DashboardLayout({
         console.error("Dashboard - Unexpected error checking session:", error)
         setHasSession(false)
         // Redirect to login if there's an error
-        // Safe check for browser environment
         if (typeof window !== 'undefined') {
-          window.location.href = '/login'
+          const win = safeWindow();
+          if (win) {
+            win.location.href = '/login'
+          }
         }
       } finally {
         setIsCheckingSession(false)
@@ -92,7 +95,10 @@ export default function DashboardLayout({
   if (!hasSession) {
     // Use client-side navigation for redirection
     if (typeof window !== 'undefined') {
-      window.location.href = '/login'
+      const win = safeWindow();
+      if (win) {
+        win.location.href = '/login';
+      }
     }
     return null
   }

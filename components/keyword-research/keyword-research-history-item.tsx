@@ -531,7 +531,7 @@ export function KeywordResearchHistoryItem({ result, onBack }: KeywordResearchHi
     });
     
     // Use client-side utility for downloading
-    import('@/utils/client-utils').then(({ downloadFile }) => {
+    import('@/lib/client-utils').then(({ downloadFile }) => {
       downloadFile(
         csvContent,
         `keyword-research-${result.mode}-${new Date().toISOString().slice(0, 10)}.csv`,

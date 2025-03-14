@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button"
 import { AnimatedTitle } from "@/components/client-success-section"
 import { ClientProviders } from "@/components/providers/client-providers"
 import { isClient } from "@/utils/client-utils"
+import { safeWindowAddEventListener, getWindowDimensions } from "@/lib/client-utils"
 
 // Force dynamic rendering to prevent serialization errors
 export const dynamic = 'force-dynamic';
@@ -42,12 +43,13 @@ export default function ContentGenerationPage() {
     // Set canvas dimensions
     const resizeCanvas = () => {
       if (!canvas) return
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+      const { width, height } = getWindowDimensions();
+      canvas.width = width;
+      canvas.height = height;
     }
     
     resizeCanvas()
-    window.addEventListener('resize', resizeCanvas)
+    const cleanupListener = safeWindowAddEventListener('resize', resizeCanvas)
     
     // Create dots
     const dots: { x: number; y: number; radius: number; opacity: number; speed: number }[] = []
@@ -93,7 +95,7 @@ export default function ContentGenerationPage() {
     animate()
     
     return () => {
-      window.removeEventListener('resize', resizeCanvas)
+      cleanupListener()
       cancelAnimationFrame(animationFrameId)
     }
   }, [mounted])

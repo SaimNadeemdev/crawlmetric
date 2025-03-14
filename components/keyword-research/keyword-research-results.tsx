@@ -436,7 +436,7 @@ export function KeywordResearchResults() {
     }
 
     // Create a download link using client-side utility
-    import('@/utils/client-utils').then(({ downloadFile }) => {
+    import('@/lib/client-utils').then(({ downloadFile }) => {
       downloadFile(
         csvContent,
         `keyword-research-${mode}-${new Date().toISOString().slice(0, 10)}.csv`,

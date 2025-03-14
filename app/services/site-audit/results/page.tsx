@@ -5,6 +5,7 @@ import { useEffect } from "react"
 import { getSiteAuditResults, getSiteAuditSummary, getPagesWithIssues } from "../actions"
 import AuditResults from "./audit-results"
 import { GradientHeading } from "@/components/ui/gradient-heading"
+import { safeReloadPage } from "@/lib/client-utils"
 
 // Force dynamic rendering to prevent serialization errors
 export const dynamic = 'force-dynamic';
@@ -36,10 +37,7 @@ export default async function SiteAuditResultsPage({
   // If the task is still in progress, show a loading message
   if (resultsResponse.success && resultsResponse.status === "in_progress") {
     const handleReloadPage = () => {
-      // Safe check for browser environment
-      if (typeof window !== 'undefined') {
-        window.location.reload();
-      }
+      safeReloadPage();
     };
 
     useEffect(() => {

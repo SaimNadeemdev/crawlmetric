@@ -60,6 +60,7 @@ import {
 import { motion } from "framer-motion"
 import { fetchKeywords, removeKeyword, refreshKeywordRanking } from "@/lib/api"
 import { AnimatedTitle } from "@/components/client-success-section"
+import { safeWindowAddEventListener, safeGetWindowScrollY, getWindowDimensions, safeWindow, safeUpdateUrl } from "@/lib/client-utils"
 
 // Force dynamic rendering to prevent serialization errors
 export const dynamic = 'force-dynamic';
@@ -157,41 +158,43 @@ export default function DashboardPage() {
   const headerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
-  // Handle scroll for header effects
+  // Handle scroll events
   useEffect(() => {
-    // Safe check for browser environment
-    if (typeof window === 'undefined') return
-    
     const handleScroll = () => {
-      if (window.scrollY > 10) {
+      if (safeGetWindowScrollY() > 10) {
         setScrolled(true)
       } else {
         setScrolled(false)
       }
     }
 
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
+    return safeWindowAddEventListener("scroll", handleScroll)
   }, [])
 
   // Dotted background animation
   useEffect(() => {
-    // Safe check for browser environment
-    if (typeof window === 'undefined') return
-    
     const canvas = canvasRef.current
     if (!canvas) return
-
-    const ctx = canvas.getContext("2d")
+    
+    const ctx = canvas.getContext('2d')
     if (!ctx) return
+    
+    // Set canvas dimensions to match window
+    const resizeCanvas = () => {
+      if (canvas) {
+        const { width, height } = getWindowDimensions()
+        canvas.width = width
+        canvas.height = height
+      }
+    }
+    
+    // Initial resize
+    resizeCanvas()
+    
+    // Add resize listener
+    const cleanupListener = safeWindowAddEventListener("resize", resizeCanvas)
 
     let animationFrameId: number
-
-    // Set canvas dimensions
-    const resizeCanvas = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-    }
 
     // Create dotted background
     const drawDottedBackground = (t: number) => {
@@ -237,12 +240,9 @@ export default function DashboardPage() {
       animationFrameId = requestAnimationFrame(animate)
     }
 
-    // Add resize listener
-    window.addEventListener("resize", resizeCanvas)
-
     // Clean up
     return () => {
-      window.removeEventListener("resize", resizeCanvas)
+      cleanupListener()
       cancelAnimationFrame(animationFrameId)
     }
   }, [])
@@ -343,8 +343,9 @@ export default function DashboardPage() {
   // Redirect if not authenticated
   useEffect(() => {
     if (!isCheckingSession && !hasSession) {
-      if (typeof window !== "undefined") {
-        window.location.href = "/login"
+      const win = safeWindow();
+      if (win) {
+        win.location.href = "/login";
       }
     }
   }, [hasSession, isCheckingSession])
@@ -601,13 +602,9 @@ export default function DashboardPage() {
           setSelectedKeyword(null)
 
           // Update URL to remove the keyword parameter
-          try {
-            const url = new URL(window.location.href)
+          safeUpdateUrl((url) => {
             url.searchParams.delete("keyword")
-            window.history.pushState({}, "", url)
-          } catch (e) {
-            console.error("Error updating URL:", e)
-          }
+          })
         }
 
         toast({
@@ -690,13 +687,9 @@ export default function DashboardPage() {
       setSelectedKeyword(keyword)
 
       // Update URL without reloading the page
-      try {
-        const url = new URL(window.location.href)
+      safeUpdateUrl((url) => {
         url.searchParams.set("keyword", keyword.id)
-        window.history.pushState({}, "", url)
-      } catch (error) {
-        console.error("Error updating URL:", error)
-      }
+      })
     },
     [authUser],
   )

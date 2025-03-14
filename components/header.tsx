@@ -18,6 +18,7 @@ import { Menu, BarChart, Settings, LogOut, Grid, Search, Home } from "lucide-rea
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Sidebar } from "@/components/sidebar"
 import { IOSLogo } from "./ui/ios-logo"
+import { safeWindowAddEventListener, safeGetWindowScrollY } from "@/lib/client-utils"
 
 export default function Header() {
   const { user, signOut } = useAuth()
@@ -27,15 +28,11 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   useEffect(() => {
-    // Safe check for browser environment
-    if (typeof window === 'undefined') return
-    
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10)
+      setIsScrolled(safeGetWindowScrollY() > 10)
     }
 
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
+    return safeWindowAddEventListener("scroll", handleScroll)
   }, [])
 
   const navigation = [

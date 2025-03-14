@@ -17,6 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/components/ui/use-toast"
 import { AlertCircle, ArrowRight, CheckCircle2, UserPlus } from "lucide-react"
 import { AuthProvider, useAuth } from "@/lib/auth-provider"
+import { safeWindowAddEventListener, getWindowDimensions } from "@/lib/client-utils"
 
 export default function RegisterPageWrapper() {
   return (
@@ -85,11 +86,10 @@ function RegisterPage() {
 
     // Set canvas dimensions
     const resizeCanvas = () => {
-      // Safe check for browser environment
-      if (typeof window === 'undefined' || !canvas) return
-      
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+      if (!canvas) return;
+      const { width, height } = getWindowDimensions();
+      canvas.width = width;
+      canvas.height = height;
     }
 
     // Create dotted background
@@ -138,14 +138,14 @@ function RegisterPage() {
 
     // Safe check for browser environment
     if (typeof window === 'undefined') return
-    window.addEventListener("resize", resizeCanvas)
+    const cleanupListener = safeWindowAddEventListener("resize", resizeCanvas)
     resizeCanvas()
     animate()
 
     return () => {
       // Safe check for browser environment
       if (typeof window === 'undefined') return
-      window.removeEventListener("resize", resizeCanvas)
+      cleanupListener()
       cancelAnimationFrame(animationFrameId)
     }
   }, [mounted])

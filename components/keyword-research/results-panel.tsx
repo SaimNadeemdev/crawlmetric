@@ -65,7 +65,7 @@ export function ResultsPanel({
       csvData += `"${item.keyword}",${item.search_volume || 0},${item.cpc || 0},${item.competition || 0},${item.keyword_difficulty || 0}\n`
     })
 
-    import('@/utils/client-utils').then(({ downloadFile }) => {
+    import('@/lib/client-utils').then(({ downloadFile }) => {
       downloadFile(
         csvData,
         `keyword-research-${new Date().toISOString()}.csv`,

@@ -2,33 +2,28 @@
 
 import { useEffect } from "react"
 import { useToast } from "@/components/ui/use-toast"
+import { safeWindowAddEventListener } from "@/lib/client-utils"
 
 export function GlobalErrorHandler() {
   const { toast } = useToast()
   
   useEffect(() => {
-    // Safe check for browser environment
-    if (typeof window === 'undefined') return
-    
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.error("Unhandled promise rejection caught by ErrorHandler:", event.reason)
+    // Handle unhandled promise rejections
+    const handleUnhandledRejection = (event: Event) => {
+      // Cast to PromiseRejectionEvent since we know it's a promise rejection event
+      const promiseEvent = event as PromiseRejectionEvent;
+      console.error("Unhandled promise rejection caught by ErrorHandler:", promiseEvent.reason)
       // You can also log this to an error tracking service
       toast({
         title: "An unexpected error occurred",
-        description: event.reason?.message || "An unexpected error occurred",
+        description: promiseEvent.reason?.message || "An unexpected error occurred",
         variant: "destructive",
       })
     }
 
-    window.addEventListener("unhandledrejection", handleUnhandledRejection)
-
-    return () => {
-      // Safe check for browser environment
-      if (typeof window !== 'undefined') {
-        window.removeEventListener("unhandledrejection", handleUnhandledRejection)
-      }
-    }
+    // Use safe event listener from client utils
+    return safeWindowAddEventListener("unhandledrejection", handleUnhandledRejection)
   }, [toast])
 
-  return null // This component doesn't render anything
+  return null
 }

@@ -10,54 +10,39 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ModeToggle } from "@/components/mode-toggle"
 import { IOSLogo } from "./ui/ios-logo"
 import { LogOut, LayoutDashboard } from "lucide-react"
+import { safeWindowAddEventListener, safeGetWindowScrollY } from "@/lib/client-utils"
 
 export function ModernNavbar() {
   const [isScrolled, setIsScrolled] = useState(false)
   const { user, signOut } = useAuth()
   const router = useRouter()
 
-  useEffect(() => {
-    // Safe check for browser environment
-    if (typeof window === 'undefined') return
-    
+  useEffect(() => {    
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20)
+      setIsScrolled(safeGetWindowScrollY() > 20)
     }
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
+    return safeWindowAddEventListener("scroll", handleScroll)
   }, [])
 
-  useEffect(() => {
-    // Safe check for browser environment
-    if (typeof window === 'undefined') return
-    
+  useEffect(() => {    
     const handleResize = () => {
       // Add your resize event logic here
     }
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
+    return safeWindowAddEventListener("resize", handleResize)
   }, [])
 
-  useEffect(() => {
-    // Safe check for browser environment
-    if (typeof window === 'undefined') return
-    
+  useEffect(() => {    
     const handleLoad = () => {
       // Add your load event logic here
     }
-    window.addEventListener("load", handleLoad)
-    return () => window.removeEventListener("load", handleLoad)
+    return safeWindowAddEventListener("load", handleLoad)
   }, [])
 
-  useEffect(() => {
-    // Safe check for browser environment
-    if (typeof window === 'undefined') return
-    
+  useEffect(() => {    
     const handleUnload = () => {
       // Add your unload event logic here
     }
-    window.addEventListener("unload", handleUnload)
-    return () => window.removeEventListener("unload", handleUnload)
+    return safeWindowAddEventListener("unload", handleUnload)
   }, [])
 
   // Handle logout and redirect

@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ModeToggle } from "@/components/mode-toggle"
 import { IOSLogo } from "../ui/ios-logo"
 import { Home, Activity, Settings, LogOut, Menu, X, ChevronRight, BarChart, Search } from "lucide-react"
+import { safeWindowAddEventListener, safeGetWindowScrollY } from "@/lib/client-utils"
 
 const publicMenuItems = [{ name: "Home", href: "/", icon: Home }]
 
@@ -33,28 +34,24 @@ export function ModernNavbar() {
   const springNavHeight = useSpring(navHeight, { stiffness: 300, damping: 30 })
 
   useEffect(() => {
-    // Safe check for browser environment
-    if (typeof window === 'undefined') return
-    
     const handleScroll = () => {
-      const scrolled = window.scrollY > 20
+      const scrolled = safeGetWindowScrollY() > 20
       setIsScrolled(scrolled)
       navHeight.set(scrolled ? 56 : 64) // Shrink navbar slightly on scroll
     }
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [navHeight])
-
-  useEffect(() => {
-    // Safe check for browser environment
-    if (typeof window === 'undefined') return
     
     const handleResize = () => {
       // Add your resize logic here
     }
-    window.addEventListener("resize", handleResize)
-    return () => window.removeEventListener("resize", handleResize)
-  }, [])
+    
+    safeWindowAddEventListener("scroll", handleScroll)
+    safeWindowAddEventListener("resize", handleResize)
+    
+    return () => {
+      safeWindowAddEventListener("scroll", handleScroll, true)
+      safeWindowAddEventListener("resize", handleResize, true)
+    }
+  }, [navHeight])
 
   // Only show menu items when user is logged in
   const menuItems = user ? [...publicMenuItems, ...authenticatedMenuItems] : []

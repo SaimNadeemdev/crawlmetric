@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { safeWindowAddEventListener } from "@/lib/client-utils"
 
 interface KeywordSectionWrapperProps {
   children: React.ReactNode
@@ -19,39 +20,46 @@ export function KeywordSectionWrapper({ children }: KeywordSectionWrapperProps) 
     // Safe check for browser environment
     if (typeof window === 'undefined') return
     
-    const handleError = (event: ErrorEvent) => {
-      console.error("Error caught by KeywordSectionWrapper:", event.error)
+    // Handle errors and rejections
+    const handleError = (e: Event) => {
+      // Cast to ErrorEvent since we know it's an error event
+      const event = e as ErrorEvent;
+      console.error("Caught error:", event.error?.message)
       setHasError(true)
       setErrorInfo(event.error?.message || "An unexpected error occurred")
-
       // Prevent the error from propagating
       event.preventDefault()
     }
 
-    // Handle unhandled promise rejections
-    const handleRejection = (event: PromiseRejectionEvent) => {
-      console.error("Unhandled promise rejection caught by KeywordSectionWrapper:", event.reason)
+    // Handle promise rejections
+    const handleRejection = (e: Event) => {
+      // Cast to PromiseRejectionEvent since we know it's a rejection event
+      const event = e as PromiseRejectionEvent;
+      console.error("Caught rejection:", event.reason)
       setHasError(true)
       setErrorInfo(event.reason?.message || "An unhandled promise rejection occurred")
-
       // Prevent the rejection from propagating
       event.preventDefault()
     }
 
-    window.addEventListener("error", handleError)
-    window.addEventListener("unhandledrejection", handleRejection)
+    safeWindowAddEventListener("error", handleError)
+    safeWindowAddEventListener("unhandledrejection", handleRejection)
 
     return () => {
-      window.removeEventListener("error", handleError)
-      window.removeEventListener("unhandledrejection", handleRejection)
+      safeWindowAddEventListener("error", handleError, true)
+      safeWindowAddEventListener("unhandledrejection", handleRejection, true)
     }
   }, [])
 
   // Function to safely reload the page
   const handleReload = () => {
-    if (typeof window !== 'undefined') {
-      window.location.reload()
-    }
+    // Use the safe window object from client-utils
+    import('@/lib/client-utils').then(({ safeWindow }) => {
+      const win = safeWindow();
+      if (win) {
+        win.location.reload();
+      }
+    });
   }
 
   if (hasError) {

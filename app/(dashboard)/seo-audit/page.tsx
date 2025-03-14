@@ -17,6 +17,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/components/ui/use-toast"
 import { AnimatedTitle } from "@/components/client-success-section"
+import { safeWindowAddEventListener, getWindowDimensions } from "@/lib/client-utils"
 
 // Force dynamic rendering to prevent serialization errors
 export const dynamic = 'force-dynamic';
@@ -51,14 +52,13 @@ export default function SeoAuditPage() {
 
   // Track mouse position for interactive background
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY })
+    const handleMouseMove = (e: Event) => {
+      // Cast to MouseEvent since we know it's a mouse event
+      const mouseEvent = e as MouseEvent;
+      setMousePosition({ x: mouseEvent.clientX, y: mouseEvent.clientY })
     }
 
-    window.addEventListener("mousemove", handleMouseMove)
-    return () => {
-      window.removeEventListener("mousemove", handleMouseMove)
-    }
+    return safeWindowAddEventListener("mousemove", handleMouseMove)
   }, [])
 
   // Initialize animated background
@@ -74,12 +74,13 @@ export default function SeoAuditPage() {
     // Set canvas dimensions
     const resizeCanvas = () => {
       if (!canvas) return
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+      const { width, height } = getWindowDimensions();
+      canvas.width = width;
+      canvas.height = height;
     }
 
     resizeCanvas()
-    window.addEventListener("resize", resizeCanvas)
+    const cleanupResizeListener = safeWindowAddEventListener("resize", resizeCanvas)
 
     // Create dots with improved properties
     const dots: {
@@ -164,7 +165,7 @@ export default function SeoAuditPage() {
     animate()
 
     return () => {
-      window.removeEventListener("resize", resizeCanvas)
+      cleanupResizeListener()
       cancelAnimationFrame(animationFrameId)
     }
   }, [mounted, mousePosition])

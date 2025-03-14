@@ -299,14 +299,12 @@ export default function HeroGeometric() {
 
       {/* CSS for the animated gradient */}
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Pacifico&display=swap');
-        
         .text-blue {
           color: #06c;
         }
         
         .pacifico-text {
-          font-family: 'Pacifico', cursive !important;
+          font-family: var(--font-pacifico), cursive !important;
         }
         
         @keyframes gradientAnimation {
@@ -330,7 +328,7 @@ export default function HeroGeometric() {
           color: transparent;
           animation: gradientAnimation 8s ease infinite;
           display: inline-block;
-          font-family: 'Pacifico', cursive !important;
+          font-family: var(--font-pacifico), cursive !important;
         }
       `}</style>
 

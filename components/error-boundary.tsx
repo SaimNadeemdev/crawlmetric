@@ -3,6 +3,7 @@
 import React from "react"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle } from "lucide-react"
+import { safeWindow } from "@/lib/client-utils"
 
 interface ErrorBoundaryProps {
   children: React.ReactNode
@@ -31,9 +32,10 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   handleReload() {
-    // Safe way to reload the page
-    if (typeof window !== 'undefined') {
-      window.location.reload()
+    // Use the safe window object from client-utils
+    const win = safeWindow();
+    if (win) {
+      win.location.reload();
     }
   }
 

@@ -10,6 +10,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ModeToggle } from "@/components/mode-toggle"
 import { IOSLogo } from "./ui/ios-logo"
 import { Settings, Menu, X, Home, ChevronRight, LogOut, User, Lock, Activity, Zap } from "lucide-react"
+import { safeWindowAddEventListener, safeGetWindowScrollY } from "@/lib/client-utils"
 
 // Define menu items
 const publicMenuItems = [{ name: "Home", href: "/", icon: Home }]
@@ -29,14 +30,11 @@ export function BlackMirrorNavbar() {
 
   // Handle scroll events to change navbar appearance
   useEffect(() => {
-    // Safe check for browser environment
-    if (typeof window === 'undefined') return;
-    
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20)
+      setIsScrolled(safeGetWindowScrollY() > 20)
     }
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
+    
+    return safeWindowAddEventListener("scroll", handleScroll)
   }, [])
 
   return (

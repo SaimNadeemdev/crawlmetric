@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { isBrowser, getWindowDimensions, safeMatchMedia } from "@/lib/client-utils"
 
 const MOBILE_BREAKPOINT = 768
 
@@ -8,17 +9,23 @@ export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
 
   React.useEffect(() => {
-    // Safe check for browser environment
-    if (typeof window === 'undefined') return
+    if (!isBrowser) return
     
-    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
+    const mql = safeMatchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
+    if (!mql) return
+    
     const onChange = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+      const { width } = getWindowDimensions()
+      setIsMobile(width < MOBILE_BREAKPOINT)
     }
+    
     mql.addEventListener("change", onChange)
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+    
+    // Set initial value
+    onChange()
+    
     return () => mql.removeEventListener("change", onChange)
   }, [])
 
-  return !!isMobile
+  return isMobile === undefined ? false : isMobile
 }

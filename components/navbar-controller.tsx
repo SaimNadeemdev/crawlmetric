@@ -3,6 +3,7 @@
 import React from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { ModernNavbar } from "@/components/modern-navbar"
+import { isBrowser, safeWindowAddEventListener, safeGetWindowLocation } from "@/lib/client-utils"
 
 export function NavbarController() {
   const pathname = usePathname()
@@ -17,12 +18,11 @@ export function NavbarController() {
     
     setShouldShow(!isDashboardPage)
     
-    // Safe check for browser environment
-    if (typeof window === 'undefined') return
-    
     // For client-side navigation that might not trigger a full component re-render
     const handleRouteChange = () => {
-      const currentPath = window.location.pathname
+      if (!isBrowser) return
+      
+      const currentPath = safeGetWindowLocation().pathname
       const isAppPage = currentPath.includes('/dashboard') || 
                         currentPath.includes('/keyword-research') || 
                         currentPath.includes('/content-generation') || 
@@ -32,14 +32,7 @@ export function NavbarController() {
     }
     
     // Add event listener for popstate (browser back/forward)
-    window.addEventListener('popstate', handleRouteChange)
-    
-    // Clean up
-    return () => {
-      // Safe check for browser environment
-      if (typeof window === 'undefined') return
-      window.removeEventListener('popstate', handleRouteChange)
-    }
+    return safeWindowAddEventListener('popstate', handleRouteChange)
   }, [pathname])
   
   if (!shouldShow) {

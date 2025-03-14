@@ -129,7 +129,7 @@ export function KeywordResearchSimple() {
       ),
     ].join("\n")
 
-    import('@/utils/client-utils').then(({ downloadFile }) => {
+    import('@/lib/client-utils').then(({ downloadFile }) => {
       downloadFile(
         csvData,
         `keyword-research-${new Date().toISOString()}.csv`,
