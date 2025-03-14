@@ -1,25 +1,91 @@
 "use client"
 
-import type { Metadata } from "next"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { getSiteAuditResults, getSiteAuditSummary, getPagesWithIssues } from "../actions"
 import AuditResults from "./audit-results"
-import { GradientHeading } from "@/components/ui/gradient-heading"
 import { safeReloadPage } from "@/lib/client-utils"
 
 // Force dynamic rendering to prevent serialization errors
 export const dynamic = 'force-dynamic';
 
-// Metadata can't be exported from a client component
-// We'll need to move this to a separate layout.tsx file or remove it
-
-export default async function SiteAuditResultsPage({
+export default function SiteAuditResultsPage({
   searchParams,
 }: {
   searchParams: { taskId?: string }
 }) {
   const taskId = searchParams.taskId || "";
+  const [isLoading, setIsLoading] = useState(true);
+  const [inProgress, setInProgress] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [results, setResults] = useState<any>(null);
+  const [summary, setSummary] = useState<any>(null);
+  const [pagesWithIssues, setPagesWithIssues] = useState<any>(null);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
+  const [pagesError, setPagesError] = useState<string | null>(null);
 
+  // Function to handle page reload
+  const handleReloadPage = () => {
+    safeReloadPage();
+  };
+
+  // Fetch data when component mounts
+  useEffect(() => {
+    if (!taskId) return;
+    
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Fetch audit results
+        const resultsResponse = await getSiteAuditResults(taskId);
+        
+        if (!resultsResponse.success) {
+          setError(resultsResponse.error || 'Failed to fetch audit results');
+          setIsLoading(false);
+          return;
+        }
+        
+        // If still in progress, set the state and return
+        if (resultsResponse.status === "in_progress") {
+          setInProgress(true);
+          setIsLoading(false);
+          return;
+        }
+        
+        // If we have results, fetch summary and pages with issues
+        setResults(resultsResponse.data);
+        
+        const [summaryResponse, pagesWithIssuesResponse] = await Promise.all([
+          getSiteAuditSummary(taskId),
+          getPagesWithIssues(taskId)
+        ]);
+        
+        if (summaryResponse.success) {
+          setSummary(summaryResponse.data);
+        } else {
+          setSummaryError(summaryResponse.error || 'Failed to fetch summary');
+          console.error('Failed to fetch summary:', summaryResponse.error);
+        }
+        
+        if (pagesWithIssuesResponse.success) {
+          setPagesWithIssues(pagesWithIssuesResponse.data);
+        } else {
+          setPagesError(pagesWithIssuesResponse.error || 'Failed to fetch pages with issues');
+          console.error('Failed to fetch pages with issues:', pagesWithIssuesResponse.error);
+        }
+        
+        setIsLoading(false);
+      } catch (err) {
+        console.error('Error fetching audit data:', err);
+        setError('An unexpected error occurred');
+        setIsLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [taskId]);
+
+  // Handle case when no task ID is provided
   if (!taskId) {
     return (
       <div className="container mx-auto px-4 py-12">
@@ -31,77 +97,74 @@ export default async function SiteAuditResultsPage({
     )
   }
 
-  // Fetch the audit results
-  const resultsResponse = await getSiteAuditResults(taskId)
-
-  // If the task is still in progress, show a loading message
-  if (resultsResponse.success && resultsResponse.status === "in_progress") {
-    const handleReloadPage = () => {
-      safeReloadPage();
-    };
-
-    useEffect(() => {
-      const timer = setTimeout(handleReloadPage, 10000);
-      return () => clearTimeout(timer);
-    }, []);
-
+  // Show loading state
+  if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto text-center">
-          <GradientHeading
-            title="Audit in Progress"
-            subtitle="Your site audit is currently running. This may take a few minutes."
-            className="mb-8"
-          />
-          <div className="flex flex-col items-center justify-center min-h-[300px] p-8 text-center">
-            <div className="animate-pulse mb-4 w-16 h-16 rounded-full border-4 border-blue-500 border-t-transparent" />
-            <GradientHeading title="Processing your audit..." className="mb-2" />
-            <p className="text-muted-foreground mb-6">This may take a few minutes. The page will refresh automatically.</p>
+          <h1 className="text-3xl font-bold mb-4">Loading Audit Results</h1>
+          <p className="mb-6">Please wait while we fetch your audit results...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show in-progress state with reload button
+  if (inProgress) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl bg-gradient-to-r from-blue-600 to-blue-300 bg-clip-text text-transparent section-title">
+              Audit in Progress
+            </h1>
+            <p className="text-gray-900 mx-auto max-w-[700px]">
+              Your site audit is still running. This may take a few minutes depending on the size of your website.
+            </p>
           </div>
-          <p className="mt-6 text-gray-400">
-            Task ID: {taskId}
+          <button
+            onClick={handleReloadPage}
+            className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Check Again
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-3xl font-bold mb-4 text-red-600">Error</h1>
+          <p className="mb-6">{error}</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Render the audit results
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="space-y-2 mb-8 text-center">
+          <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl bg-gradient-to-r from-blue-600 to-blue-300 bg-clip-text text-transparent section-title">
+            Site Audit Results
+          </h1>
+          <p className="text-gray-900 mx-auto max-w-[700px]">
+            Comprehensive analysis of your website's SEO health
           </p>
         </div>
-      </div>
-    )
-  }
-
-  // If there was an error, show the error message
-  if (!resultsResponse.success) {
-    return (
-      <div className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-3xl font-bold mb-4">Error Fetching Audit Results</h1>
-          <p className="mb-6 text-red-500">{resultsResponse.error || "An unknown error occurred"}</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Fetch the summary and pages with issues
-  const summaryResponse = await getSiteAuditSummary(taskId)
-  const pagesWithIssuesResponse = await getPagesWithIssues(taskId)
-
-  // Ensure summary and pages data are properly typed
-  const summary = summaryResponse.success ? summaryResponse.data || null : null;
-  const pages = pagesWithIssuesResponse.success ? pagesWithIssuesResponse.data || null : null;
-
-  return (
-    <div className="container mx-auto px-4 py-12">
-      <div className="max-w-6xl mx-auto">
-        <GradientHeading
-          title="Site Audit Results"
-          subtitle="Comprehensive analysis of your website's SEO health"
-          className="mb-8 text-center"
-        />
-
-        <AuditResults
+        
+        <AuditResults 
           taskId={taskId}
-          taskData={resultsResponse.data}
+          taskData={results}
           summaryData={summary}
-          pagesWithIssues={pages}
-          summaryError={summaryResponse.success ? null : (summaryResponse.error || null)}
-          pagesError={pagesWithIssuesResponse.success ? null : (pagesWithIssuesResponse.error || null)}
+          pagesWithIssues={pagesWithIssues}
+          summaryError={summaryError}
+          pagesError={pagesError}
         />
       </div>
     </div>
