@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { startSiteAudit } from "./actions"
+import { startSiteAudit } from "./client-actions"
 import { Globe, ArrowRight, CheckCircle2, AlertCircle } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { useRouter } from "next/navigation"
@@ -263,4 +263,3 @@ export default function SiteAuditForm() {
     </AnimatePresence>
   )
 }
-

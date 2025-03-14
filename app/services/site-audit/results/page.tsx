@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { getSiteAuditResults, getSiteAuditSummary, getPagesWithIssues } from "../actions"
+import { getSiteAuditResults, getSiteAuditSummary, getPagesWithIssues } from "../client-actions"
 import AuditResults from "./audit-results"
 import { safeReloadPage } from "@/lib/client-utils"
 

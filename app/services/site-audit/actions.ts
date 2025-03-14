@@ -1,5 +1,3 @@
-"use client"
-
 "use server"
 
 import { revalidatePath } from "next/cache"
